@@ -13,8 +13,12 @@ public class Game {
         this.player1Name = player1;
         this.player2Name = player2;
         this.board = new int[8][8];
+        reset();
+    }
+
+    public void reset() {
         initializeBoard();
-        this.p1Turn = true; // P1 starts
+        this.p1Turn = true; 
         this.isGameOver = false;
         this.winner = null;
     }
@@ -79,26 +83,11 @@ public class Game {
             if (!isP1 && dy <= 0) return "Must move forward (down).";
         }
 
-        // Check if there are mandatory jumps available somewhere on the board
-        boolean jumpAvailable = false;
-        for (int x = 0; x < 8; x++) {
-            for (int y = 0; y < 8; y++) {
-                int p = board[x][y];
-                if (p != 0 && ((isP1 && (p==1||p==3)) || (!isP1 && (p==2||p==4)))) {
-                    if (canJump(x, y)) {
-                        jumpAvailable = true;
-                        break;
-                    }
-                }
-            }
-            if (jumpAvailable) break;
-        }
-
         boolean isJump = Math.abs(dx) == 2 && Math.abs(dy) == 2;
         boolean isSimple = Math.abs(dx) == 1 && Math.abs(dy) == 1;
 
         if (isSimple) {
-            if (jumpAvailable) return "Jump is mandatory.";
+            // No longer mandatory jump check here
         } else if (isJump) {
             int midX = startX + dx / 2;
             int midY = startY + dy / 2;
@@ -139,6 +128,11 @@ public class Game {
         
         checkWinCondition();
         return null; // success
+    }
+
+    public void setGameOver(String winner) {
+        this.isGameOver = true;
+        this.winner = winner;
     }
 
     private boolean isValidBoardPos(int x, int y) {
