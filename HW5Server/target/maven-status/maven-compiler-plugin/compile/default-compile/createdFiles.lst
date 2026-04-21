@@ -1,8 +1,8 @@
 GuiServer.class
 Server$ClientThread.class
 Server.class
-Game.class
 GameManager$GameSession.class
+Game.class
 Message.class
 Message$Action.class
 GuiServer$1.class

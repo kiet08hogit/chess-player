@@ -1,4 +1,6 @@
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class Message implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -13,13 +15,26 @@ public class Message implements Serializable {
         CHAT_MESSAGE,
         GAME_OVER,
         PLAY_AGAIN,
-        OPPONENT_LEFT
+        OPPONENT_LEFT,
+        UPDATE_PLAYER_LIST,
+        FIND_MATCH,
+        CREATE_ROOM,
+        JOIN_ROOM,
+        WATCH_MATCH,
+        ERROR,
+        SURRENDER,
+        REMATCH
     }
 
     public Action action;
     public String username;
     public String content;
     public String opponentName;
+    public String player1Name;
+    public String player2Name;
+    public ArrayList<String> playerList;
+    public HashMap<String, String> playerStatusMap;
+    public String roomId;
 
     // Movement details
     public int startX = -1;
@@ -28,13 +43,17 @@ public class Message implements Serializable {
     public int endY = -1;
 
     // Game state representation sent by server
-    // 0 = empty, 1 = P1, 2 = P2, 3 = P1 King, 4 = P2 King
     public int[][] board; 
 
     // Info for client
-    public boolean isPlayer1; // true if this client is player 1
+    public boolean isPlayer1; 
     public boolean isMyTurn;
     public String gameStatus;
+    public boolean isSpectator;
+    
+    // Scores
+    public int p1Score;
+    public int p2Score;
 
     public Message() {}
 

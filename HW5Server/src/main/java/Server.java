@@ -42,13 +42,14 @@ public class Server {
         }
     }
 
-    class ClientThread extends Thread {
+    public class ClientThread extends Thread {
         Socket connection;
         ObjectInputStream in;
         ObjectOutputStream out;
 
-        String username;
-        GameManager.GameSession gameSession;
+        public String username;
+        public String status = "Online";
+        public GameManager.GameSession gameSession;
 
         ClientThread(Socket s) {
             this.connection = s;

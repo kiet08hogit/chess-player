@@ -1,4 +1,7 @@
-Message.class
+HomeView.class
 Client.class
-Message$Action.class
+GameView.class
 GuiClient.class
+Message.class
+Message$Action.class
+LoginView.class
