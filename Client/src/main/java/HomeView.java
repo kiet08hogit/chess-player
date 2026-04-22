@@ -83,19 +83,7 @@ public class HomeView {
             result.ifPresent(roomId -> mainApp.onWatchMatch(roomId));
         });
 
-        playBot.setOnAction(e -> {
-            javafx.scene.control.ChoiceDialog<String> dialog = new javafx.scene.control.ChoiceDialog<>("Level 1", "Level 1", "Level 2");
-            dialog.setTitle("Play with Bot");
-            dialog.setHeaderText("Choose Difficulty Level");
-            dialog.setContentText("Bot Level:");
-            Optional<String> result = dialog.showAndWait();
-            result.ifPresent(levelStr -> {
-                int level = levelStr.equals("Level 1") ? 1 : 2;
-                Message m = new Message(Message.Action.PLAY_BOT);
-                m.botLevel = level;
-                mainApp.clientConnection.send(m);
-            });
-        });
+        playBot.setOnAction(e -> mainApp.onPlayBotClicked());
         
         // --- Center Area (Static Board) ---
         StackPane centerWrapper = new StackPane();

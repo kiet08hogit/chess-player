@@ -30,9 +30,11 @@ public class GameView {
     private Label gameOverOverlay;
     
     private VBox chatInputBox;
+    private HBox chatLine;
     private HBox endMatchControls;
     private HBox spectatorControls;
     private VBox notificationOverlay;
+    private VBox scoreCol;
     private Label notificationTitle;
     private Label notificationContent;
     private HBox notificationButtons;
@@ -140,7 +142,7 @@ public class GameView {
         rulesText.setStyle("-fx-text-fill: #9CA3AF; -fx-font-size: 14px; -fx-line-spacing: 4px;");
         rulesSidebar.getChildren().addAll(rulesTitle, rulesText);
 
-        VBox scoreCol = new VBox(150);
+        scoreCol = new VBox(150);
         scoreCol.setAlignment(Pos.CENTER);
         opponentScoreLabel = new Label("0");
         opponentScoreLabel.setStyle("-fx-font-size: 30px; -fx-text-fill: #e74c3c; -fx-font-weight: bold;");
@@ -173,7 +175,7 @@ public class GameView {
         
         chatInputBox = new VBox(10);
         chatInputBox.setAlignment(Pos.CENTER);
-        HBox chatLine = new HBox(5);
+        chatLine = new HBox(5);
         chatField = new TextField();
         chatField.setPromptText("Type a message...");
         chatField.setPrefWidth(180);
@@ -471,14 +473,52 @@ public class GameView {
         playingWithLabel.setManaged(!isBot);
         chatList.setVisible(!isBot);
         chatList.setManaged(!isBot);
-        chatInputBox.setVisible(!isBot);
-        chatInputBox.setManaged(!isBot);
+        chatLine.setVisible(!isBot);
+        chatLine.setManaged(!isBot);
         scoreCol.setVisible(!isBot);
         scoreCol.setManaged(!isBot);
         
         if (isBot) {
             statusLabel.setText("TRAINING MODE");
+            roomIdLabel.setVisible(false);
+            roomIdLabel.setManaged(false);
+            surrenderBtn.setText("HOME");
+            surrenderBtn.getStyleClass().remove("surrender-button");
+            surrenderBtn.getStyleClass().add("menu-button");
+            surrenderBtn.setOnAction(e -> mainApp.returnToHome());
+        } else {
+            roomIdLabel.setVisible(true);
+            roomIdLabel.setManaged(true);
+            surrenderBtn.setText("SURRENDER");
+            surrenderBtn.getStyleClass().remove("menu-button");
+            surrenderBtn.getStyleClass().add("surrender-button");
+            surrenderBtn.setOnAction(e -> mainApp.clientConnection.send(new Message(Message.Action.SURRENDER)));
         }
+    }
+
+    public void showBotLevelSelection() {
+        notificationTitle.setText("SELECT DIFFICULTY");
+        notificationContent.setText("Choose your opponent's level");
+        notifyPositiveBtn.setText("LEVEL 1");
+        notifyPositiveBtn.setStyle("-fx-background-color: #10B981; -fx-pref-width: 150;");
+        notifyNegativeBtn.setText("LEVEL 2");
+        notifyNegativeBtn.setStyle("-fx-background-color: #EF4444; -fx-pref-width: 150;");
+        notifyNegativeBtn.setVisible(true);
+        notifyNegativeBtn.setManaged(true);
+        
+        notifyPositiveBtn.setOnAction(e -> startBotMatch(1));
+        notifyNegativeBtn.setOnAction(e -> startBotMatch(2));
+        
+        notificationOverlay.setVisible(true);
+        notificationOverlay.setManaged(true);
+    }
+    
+    private void startBotMatch(int level) {
+        notificationOverlay.setVisible(false);
+        notificationOverlay.setManaged(false);
+        Message m = new Message(Message.Action.PLAY_BOT);
+        m.botLevel = level;
+        mainApp.clientConnection.send(m);
     }
 
     public void showRematchRequest() {

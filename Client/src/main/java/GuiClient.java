@@ -114,6 +114,12 @@ public class GuiClient extends Application {
         clientConnection.send(m);
     }
 
+    public void onPlayBotClicked() {
+        primaryStage.setScene(gameScene);
+        gameView.resetUI();
+        gameView.showBotLevelSelection();
+    }
+
     private void handleServerMessage(Message data) {
         if (data.action == Message.Action.LOGIN_SUCCESS) {
             homeView.setUserLabel(loggedInUser);
@@ -148,6 +154,8 @@ public class GuiClient extends Application {
                 this.isSpectatorMode = true;
                 this.isP1 = spectatorViewP1; 
                 primaryStage.setTitle("Spectating Room #" + data.roomId);
+            } else {
+                this.isSpectatorMode = false;
             }
             
             gameView.updateState(data);
