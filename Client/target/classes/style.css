@@ -1,0 +1,162 @@
+.root {
+    -fx-background-color: #0F172A;
+    -fx-font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+}
+
+.login-card {
+    -fx-background-color: #1E293B;
+    -fx-background-radius: 15;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 20, 0, 0, 8);
+    -fx-padding: 40;
+    -fx-spacing: 20;
+}
+
+.title-label {
+    -fx-text-fill: white;
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+}
+
+.text-field {
+    -fx-background-color: #0F172A;
+    -fx-text-fill: white;
+    -fx-prompt-text-fill: #9CA3AF;
+    -fx-border-color: #334155;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-padding: 10;
+    -fx-font-size: 14px;
+}
+
+.text-field:focused {
+    -fx-border-color: #007bff;
+    -fx-border-width: 2;
+    -fx-border-radius: 5;
+}
+
+.button {
+    -fx-background-color: #EF4444;
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-padding: 10 25;
+    -fx-background-radius: 5;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: #DC2626;
+}
+
+.button:pressed {
+    -fx-background-color: #B91C1C;
+}
+
+.waiting-label {
+    -fx-text-fill: #9CA3AF;
+    -fx-font-size: 18px;
+    -fx-font-style: italic;
+}
+
+/* Game Styles */
+.game-root {
+    -fx-padding: 20;
+    -fx-spacing: 20;
+}
+
+.chat-list {
+    -fx-background-color: #0F172A;
+    -fx-background-radius: 5;
+    -fx-control-inner-background: #0F172A;
+    -fx-text-inner-color: #E2E8F0;
+}
+
+.status-label {
+    -fx-text-fill: #EF4444;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+/* Home Page Styles */
+.home-root {
+    -fx-padding: 15;
+}
+
+.sidebar {
+    -fx-background-color: #1E293B;
+    -fx-background-radius: 10;
+    -fx-padding: 20;
+    -fx-spacing: 15;
+    -fx-border-color: #334155;
+    -fx-border-width: 0 1 0 0;
+}
+
+.menu-button {
+    -fx-background-color: #334155;
+    -fx-text-fill: #ddd;
+    -fx-alignment: CENTER;
+    -fx-font-size: 14px;
+    -fx-pref-width: 200;
+}
+
+.menu-button:hover {
+    -fx-background-color: #475569;
+    -fx-text-fill: white;
+}
+
+.player-list {
+    -fx-background-color: #1E293B;
+    -fx-background-radius: 10;
+    -fx-padding: 10;
+    -fx-spacing: 10;
+    -fx-pref-width: 200;
+    -fx-border-color: #334155;
+    -fx-border-width: 0 0 0 1;
+}
+
+.player-list .list-view {
+    -fx-background-color: transparent;
+    -fx-control-inner-background: transparent;
+}
+
+.player-list .list-cell {
+    -fx-text-fill: #9CA3AF;
+    -fx-font-size: 13px;
+    -fx-padding: 5;
+}
+
+.player-list .list-cell:filled:hover {
+    -fx-background-color: #334155;
+    -fx-text-fill: white;
+}
+
+.user-info-bar {
+    -fx-background-color: #0F172A;
+    -fx-padding: 10 20;
+    -fx-spacing: 10;
+    -fx-border-color: #334155;
+    -fx-border-width: 1 0 0 0;
+}
+
+.user-label {
+    -fx-text-fill: #EF4444;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+}
+
+.board-placeholder {
+    -fx-background-color: #252525;
+    -fx-background-radius: 15;
+    -fx-border-color: #444;
+    -fx-border-width: 2;
+    -fx-border-style: dashed;
+}
+
+.surrender-button {
+    -fx-background-color: linear-gradient(to right, #e74c3c, #c0392b);
+    -fx-font-size: 14px;
+}
+
+.surrender-button:hover {
+    -fx-background-color: linear-gradient(to right, #c0392b, #a93226);
+}
