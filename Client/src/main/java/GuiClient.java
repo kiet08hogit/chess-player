@@ -38,8 +38,10 @@ public class GuiClient extends Application {
     String loggedInUser = "";
     boolean isP1;
     boolean isSpectatorMode = false;
+    boolean spectatorViewP1 = true;
     int selectedX = -1;
     int selectedY = -1;
+    private Message lastMessage;
 
     public static void main(String[] args) {
         launch(args);
@@ -129,24 +131,30 @@ public class GuiClient extends Application {
             if (primaryStage.getScene() != gameScene) {
                 primaryStage.setScene(gameScene);
                 gameView.clearChat();
-                gameView.resetUI();
             }
+            
+            this.lastMessage = data;
             
             if (data.action == Message.Action.MATCH_FOUND) {
                 this.isP1 = data.isPlayer1;
                 this.isSpectatorMode = false;
                 primaryStage.setTitle("Checkers Room #" + data.roomId);
                 gameView.addChatMessage("System: Joined match " + data.roomId);
+                gameView.resetUI();
+                gameView.setBotMatchMode(data.isBotMatch);
             }
             
             if (data.isSpectator) {
                 this.isSpectatorMode = true;
-                this.isP1 = true; 
+                this.isP1 = spectatorViewP1; 
                 primaryStage.setTitle("Spectating Room #" + data.roomId);
             }
             
             gameView.updateState(data);
         } 
+        else if (data.action == Message.Action.REMATCH_REQUEST) {
+            gameView.showRematchRequest();
+        }
         else if (data.action == Message.Action.CHAT_MESSAGE) {
             gameView.addChatMessage(data.username + ": " + data.content);
         }
@@ -161,17 +169,28 @@ public class GuiClient extends Application {
             gameView.showGameOver(data.content);
         }
         else if (data.action == Message.Action.OPPONENT_LEFT) {
-            new Alert(AlertType.WARNING, "Match ended. Returning to Home.").show();
-            primaryStage.setScene(homeScene);
+            gameView.showOpponentLeft(data.content, data.gameStatus);
         }
         else if (data.action == Message.Action.ERROR) {
-            new Alert(AlertType.WARNING, data.content).show();
+            if (primaryStage.getScene() == gameScene) {
+                gameView.showGenericNotification("NOTIFICATION", data.content);
+            } else {
+                new Alert(AlertType.WARNING, data.content).show();
+            }
+            
             if (data.content.contains("Match ended") || data.content.contains("Room not found")) {
                 primaryStage.setScene(homeScene);
             }
         }
     }
 
+    public void refreshView() {
+        if (lastMessage != null) {
+            this.isP1 = isSpectatorMode ? spectatorViewP1 : isP1;
+            gameView.updateState(lastMessage);
+        }
+    }
+    
     public void handleTileClick(int x, int y, int piece) {
         boolean ownPiece = false;
         if (isP1 && (piece == 1 || piece == 3)) ownPiece = true;
@@ -217,6 +236,7 @@ public class GuiClient extends Application {
         try { root.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch (Exception e) {}
         waitingTitleLabel = new Label("Searching for opponent...");
         waitingTitleLabel.getStyleClass().add("searching-label");
+        waitingTitleLabel.setStyle("-fx-text-fill: white;"); // Ensure it's white
         
         Circle pulse = new Circle(30, Color.web("#DC2626"));
         FadeTransition ft = new FadeTransition(Duration.seconds(1), pulse);

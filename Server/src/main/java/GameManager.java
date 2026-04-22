@@ -64,7 +64,11 @@ public class GameManager {
         for (Server.ClientThread client : onlineUsers.values()) {
             String displayStatus = client.status;
             if ("In a match".equals(client.status) && client.gameSession != null) {
-                displayStatus = "in a game #" + client.gameSession.roomId;
+                if (client.gameSession.isBotMatch) {
+                    displayStatus = "(training)";
+                } else {
+                    displayStatus = "in a game #" + client.gameSession.roomId;
+                }
             }
             statusMap.put(client.username, displayStatus);
         }
@@ -77,6 +81,7 @@ public class GameManager {
 
     public synchronized void findMatch(Server.ClientThread client) {
         client.status = "Waiting for opponent";
+        server.log(client.username + " is waiting for an opponent");
         broadcastOnlinePlayers();
 
         Server.ClientThread opponent = null;
@@ -157,6 +162,14 @@ public class GameManager {
             update.gameStatus = "Spectating: " + session.p1.username + " vs " + session.p2.username;
             client.send(update);
             
+            // Send chat history to new spectator
+            for (String chatMsg : session.chatHistory) {
+                Message cm = new Message(Message.Action.CHAT_MESSAGE);
+                cm.content = chatMsg;
+                cm.username = "History"; 
+                client.send(cm);
+            }
+            
             broadcastOnlinePlayers();
         } else {
             Message err = new Message(Message.Action.ERROR);
@@ -171,7 +184,10 @@ public class GameManager {
             if (client == session.p1 || client == session.p2) {
                  Server.ClientThread opponent = session.getOpponent(client);
                  if (opponent != null) {
-                     opponent.send(new Message(Message.Action.OPPONENT_LEFT));
+                     Message m = new Message(Message.Action.OPPONENT_LEFT);
+                     m.content = client.username;
+                     m.gameStatus = "MATCH_LEFT";
+                     opponent.send(m);
                      opponent.status = "Online";
                      opponent.gameSession = null;
                  }
@@ -201,7 +217,7 @@ public class GameManager {
             findMatch(client);
         } else if (msg.action == Message.Action.CREATE_ROOM) {
             String roomId = generateRoomId();
-            client.status = "Waiting in #" + roomId;
+            client.status = "Waiting in a room";
             waitingRooms.put(roomId, client);
             broadcastOnlinePlayers();
             
@@ -209,6 +225,7 @@ public class GameManager {
             m.roomId = roomId;
             client.send(m);
             server.log(client.username + " created room #" + roomId);
+            server.log(client.username + " is waiting for friends in room #" + roomId);
         } else if (msg.action == Message.Action.JOIN_ROOM) {
             if (waitingRooms.containsKey(msg.roomId)) {
                 Server.ClientThread host = waitingRooms.remove(msg.roomId);
@@ -218,7 +235,10 @@ public class GameManager {
                 err.content = "Room #" + msg.roomId + " does not exist or is already full.";
                 client.send(err);
             }
+        } else if (msg.action == Message.Action.PLAY_BOT) {
+            playBot(client, msg.botLevel);
         } else if (msg.action == Message.Action.CANCEL_WAITING) {
+            server.log(client.username + " cancelled waiting");
             client.status = "Online";
             waitingRooms.values().remove(client);
             broadcastOnlinePlayers();
@@ -229,11 +249,15 @@ public class GameManager {
             if (session != null) {
                 msg.username = client.username;
                 msg.content = filterProfanity(msg.content);
+                
+                String historyEntry = msg.username + ": " + msg.content;
+                session.chatHistory.add(historyEntry);
+                
                 // Broadcast to everyone in the room
                 session.p1.send(msg);
                 session.p2.send(msg);
                 for (Server.ClientThread s : session.spectators) {
-                    if (s != client) s.send(msg);
+                    s.send(msg);
                 }
                 server.log(client.username + " sent a room message in #" + session.roomId);
             } else {
@@ -249,15 +273,34 @@ public class GameManager {
         } else if (msg.action == Message.Action.SURRENDER) {
             GameSession session = client.gameSession;
             if (session != null) {
-                if (client != session.p1 && client != session.p2) return; // Spectators can't surrender
+                if (client != session.p1 && client != session.p2) return; 
                 String winner = (client == session.p1) ? session.p2.username : session.p1.username;
                 session.game.setGameOver(winner);
+                
+                if (winner.equals(session.p1.username)) session.p1Score++;
+                else session.p2Score++;
+                
+                server.log(client.username + " surrendered, " + winner + " won. Room ID: #" + session.roomId + " [Score: " + session.p1Score + "-" + session.p2Score + "]");
+                
                 broadcastGameState(session);
             }
         } else if (msg.action == Message.Action.REMATCH) {
             GameSession session = client.gameSession;
             if (session != null) {
-                if (client != session.p1 && client != session.p2) return; // Spectators can't rematch
+                if (client != session.p1 && client != session.p2) return; 
+                Server.ClientThread opponent = session.getOpponent(client);
+                if (opponent != null) {
+                    opponent.send(new Message(Message.Action.REMATCH_REQUEST));
+                    server.log(client.username + " requested a rematch against " + opponent.username);
+                }
+            }
+        } else if (msg.action == Message.Action.REMATCH_ACCEPT) {
+            GameSession session = client.gameSession;
+            if (session != null) {
+                if (client != session.p1 && client != session.p2) return;
+                
+                server.log(client.username + " accepted rematch in room #" + session.roomId);
+                
                 Server.ClientThread tempP = session.p1;
                 session.p1 = session.p2;
                 session.p2 = tempP;
@@ -268,6 +311,17 @@ public class GameManager {
 
                 session.game = new Game(session.p1.username, session.p2.username);
                 sendMatchStart(session);
+            }
+        } else if (msg.action == Message.Action.REMATCH_DECLINE) {
+            GameSession session = client.gameSession;
+            if (session != null) {
+                Server.ClientThread opponent = session.getOpponent(client);
+                if (opponent != null) {
+                    Message m = new Message(Message.Action.ERROR);
+                    m.content = "Opponent declined rematch.";
+                    opponent.send(m);
+                }
+                playAgain(client);
             }
         } else {
             GameSession session = client.gameSession;
@@ -283,7 +337,29 @@ public class GameManager {
                     errMsg.content = error;
                     client.send(errMsg);
                 }
+                
+                if (session.game.isGameOver()) {
+                    String winner = session.game.getWinner();
+                    String loser = "";
+                    if (winner.equals(session.p1.username)) {
+                        session.p1Score++;
+                        loser = session.isBotMatch ? "BOT" : (session.p2 != null ? session.p2.username : "unknown");
+                    } else {
+                        session.p2Score++;
+                        loser = session.p1.username;
+                    }
+                    
+                    server.log(winner + " won against " + loser + ". Room ID: #" + session.roomId + " [Score: " + session.p1Score + "-" + session.p2Score + "]");
+                }
+                
                 broadcastGameState(session);
+
+                if (session.isBotMatch && !session.game.isGameOver() && !session.game.isP1Turn()) {
+                    new Thread(() -> {
+                        try { Thread.sleep(800); } catch (Exception e) {}
+                        makeBotMove(session);
+                    }).start();
+                }
             } else if (msg.action == Message.Action.PLAY_AGAIN) {
                  playAgain(client);
             }
@@ -303,16 +379,8 @@ public class GameManager {
         if (game.isGameOver()) {
             update.action = Message.Action.GAME_OVER;
             update.content = game.getWinner();
-            
-            if (game.getWinner().equals(session.p1.username)) {
-                session.p1Score++;
-            } else if (game.getWinner().equals(session.p2.username)) {
-                session.p2Score++;
-            }
             update.p1Score = session.p1Score;
             update.p2Score = session.p2Score;
-            
-            server.log(game.getWinner() + " won " + (game.getWinner().equals(session.p1.username) ? session.p2.username : session.p1.username) + ", room id: " + session.roomId + " [Score: " + session.p1Score + "-" + session.p2Score + "]");
         }
 
         Message m1 = cloneUpdate(update);
@@ -339,6 +407,8 @@ public class GameManager {
     private void handleForfeit(GameSession session, String leaver) {
         Message m = new Message(Message.Action.OPPONENT_LEFT);
         m.roomId = session.roomId;
+        m.content = leaver;
+        m.gameStatus = "SERVER_DISCONNECT";
         
         if (session.p1.username.equals(leaver)) {
             session.p2.send(m);
@@ -375,6 +445,63 @@ public class GameManager {
         return n;
     }
 
+    private void playBot(Server.ClientThread client, int level) {
+        client.status = "In a match";
+        Game botGame = new Game(client.username, "BOT");
+        GameSession session = new GameSession(client, null, botGame, "BOT_ROOM");
+        session.isBotMatch = true;
+        session.botLevel = level;
+        client.gameSession = session;
+        
+        server.log(client.username + " started training with bot (Level " + level + ")");
+        
+        Message m = new Message(Message.Action.MATCH_FOUND);
+        m.opponentName = "BOT (Lv" + level + ")";
+        m.isPlayer1 = true;
+        m.isBotMatch = true;
+        m.botLevel = level;
+        client.send(m);
+        
+        broadcastGameState(session);
+        broadcastOnlinePlayers();
+    }
+
+    private void makeBotMove(GameSession session) {
+        synchronized(this) {
+            if (session.game.isGameOver() || session.game.isP1Turn()) return;
+            
+            List<int[]> moves = session.game.getAllValidMoves(false);
+            if (moves.isEmpty()) return;
+            
+            int[] choice;
+            if (session.botLevel == 2) {
+                // Prioritize jumps (index 4 is jump flag)
+                List<int[]> jumps = new ArrayList<>();
+                for (int[] m : moves) if (m[4] == 1) jumps.add(m);
+                
+                if (!jumps.isEmpty()) {
+                    choice = jumps.get(random.nextInt(jumps.size()));
+                } else {
+                    choice = moves.get(random.nextInt(moves.size()));
+                }
+            } else {
+                // Random move
+                choice = moves.get(random.nextInt(moves.size()));
+            }
+            
+            session.game.attemptMove(false, choice[0], choice[1], choice[2], choice[3]);
+            broadcastGameState(session);
+            
+            // Check if bot can jump again (double jump)
+            if (!session.game.isGameOver() && !session.game.isP1Turn()) {
+                new Thread(() -> {
+                    try { Thread.sleep(600); } catch (Exception e) {}
+                    makeBotMove(session);
+                }).start();
+            }
+        }
+    }
+
     private String filterProfanity(String input) {
         if (input == null) return null;
         String[] badWords = { 
@@ -398,8 +525,11 @@ public class GameManager {
         Game game;
         String roomId;
         List<Server.ClientThread> spectators = new ArrayList<>();
+        List<String> chatHistory = new ArrayList<>();
         int p1Score = 0;
         int p2Score = 0;
+        boolean isBotMatch = false;
+        int botLevel = 1;
 
         GameSession(Server.ClientThread p1, Server.ClientThread p2, Game game, String roomId) {
             this.p1 = p1;

@@ -228,4 +228,60 @@ public class Game {
         }
         return canJumpFromPosition(x, y);
     }
+
+    public List<int[]> getAllValidMoves(boolean isP1) {
+        List<int[]> moves = new ArrayList<>();
+        for (int x = 0; x < 8; x++) {
+            for (int y = 0; y < 8; y++) {
+                int p = board[x][y];
+                if (isP1 && (p == 1 || p == 3)) {
+                    moves.addAll(getValidMovesFrom(x, y));
+                } else if (!isP1 && (p == 2 || p == 4)) {
+                    moves.addAll(getValidMovesFrom(x, y));
+                }
+            }
+        }
+        return moves;
+    }
+
+    private List<int[]> getValidMovesFrom(int x, int y) {
+        List<int[]> moves = new ArrayList<>();
+        int piece = board[x][y];
+        boolean isP1 = (piece == 1 || piece == 3);
+        boolean isKing = (piece == 3 || piece == 4);
+
+        int[][] dirs;
+        if (isKing) {
+            dirs = new int[][]{{-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
+        } else if (isP1) {
+            dirs = new int[][]{{-1, -1}, {1, -1}};
+        } else {
+            dirs = new int[][]{{-1, 1}, {1, 1}};
+        }
+
+        // Check jumps
+        for (int[] dir : dirs) {
+            int midX = x + dir[0];
+            int midY = y + dir[1];
+            int destX = x + 2 * dir[0];
+            int destY = y + 2 * dir[1];
+            if (isValidBoardPos(destX, destY)) {
+                int midP = board[midX][midY];
+                if (midP != 0 && board[destX][destY] == 0) {
+                    boolean midIsOpponent = isP1 ? (midP == 2 || midP == 4) : (midP == 1 || midP == 3);
+                    if (midIsOpponent) moves.add(new int[]{x, y, destX, destY, 1}); // 1 = jump
+                }
+            }
+        }
+
+        // Check simple moves
+        for (int[] dir : dirs) {
+            int destX = x + dir[0];
+            int destY = y + dir[1];
+            if (isValidBoardPos(destX, destY) && board[destX][destY] == 0) {
+                moves.add(new int[]{x, y, destX, destY, 0}); // 0 = simple
+            }
+        }
+        return moves;
+    }
 }
