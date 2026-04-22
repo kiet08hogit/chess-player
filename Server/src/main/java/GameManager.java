@@ -57,20 +57,24 @@ public class GameManager {
         }
     }
 
-    private void broadcastOnlinePlayers() {
+    private synchronized void broadcastOnlinePlayers() {
         Message msg = new Message(Message.Action.UPDATE_PLAYER_LIST);
         HashMap<String, String> statusMap = new HashMap<>();
         
-        for (Server.ClientThread client : onlineUsers.values()) {
-            String displayStatus = client.status;
-            if ("In a match".equals(client.status) && client.gameSession != null) {
-                if (client.gameSession.isBotMatch) {
+        // Copy keys to avoid ConcurrentModificationException if needed, 
+        // though we are in a synchronized method.
+        for (String uname : onlineUsers.keySet()) {
+            Server.ClientThread c = onlineUsers.get(uname);
+            String displayStatus = c.status;
+            
+            if ("In a match".equals(c.status) && c.gameSession != null) {
+                if (c.gameSession.isBotMatch) {
                     displayStatus = "(training)";
                 } else {
-                    displayStatus = "in a game #" + client.gameSession.roomId;
+                    displayStatus = "in a game #" + c.gameSession.roomId;
                 }
             }
-            statusMap.put(client.username, displayStatus);
+            statusMap.put(uname, displayStatus);
         }
         msg.playerStatusMap = statusMap;
         
@@ -372,9 +376,10 @@ public class GameManager {
         update.board = game.getBoard();
         update.roomId = session.roomId;
         update.player1Name = session.p1.username;
-        update.player2Name = session.p2.username;
+        update.player2Name = (session.p2 != null) ? session.p2.username : "BOT";
         update.p1Score = session.p1Score;
         update.p2Score = session.p2Score;
+        update.isBotMatch = session.isBotMatch;
         
         if (game.isGameOver()) {
             update.action = Message.Action.GAME_OVER;
@@ -389,11 +394,13 @@ public class GameManager {
         if (game.isGameOver()) m1.gameStatus = "Winner: " + game.getWinner();
         session.p1.send(m1);
 
-        Message m2 = cloneUpdate(update);
-        m2.isMyTurn = !game.isP1Turn();
-        m2.gameStatus = !game.isP1Turn() ? "Your Turn" : "Opponent's Turn";
-        if (game.isGameOver()) m2.gameStatus = "Winner: " + game.getWinner();
-        session.p2.send(m2);
+        if (session.p2 != null) {
+            Message m2 = cloneUpdate(update);
+            m2.isMyTurn = !game.isP1Turn();
+            m2.gameStatus = !game.isP1Turn() ? "Your Turn" : "Opponent's Turn";
+            if (game.isGameOver()) m2.gameStatus = "Winner: " + game.getWinner();
+            session.p2.send(m2);
+        }
         
         for (Server.ClientThread s : session.spectators) {
             Message ms = cloneUpdate(update);
@@ -410,14 +417,18 @@ public class GameManager {
         m.content = leaver;
         m.gameStatus = "SERVER_DISCONNECT";
         
-        if (session.p1.username.equals(leaver)) {
-            session.p2.send(m);
-            session.p2.gameSession = null;
-            session.p2.status = "Online";
-        } else {
-            session.p1.send(m);
-            session.p1.gameSession = null;
-            session.p1.status = "Online";
+        if (session.p1 != null && session.p1.username.equals(leaver)) {
+            if (session.p2 != null) {
+                session.p2.send(m);
+                session.p2.gameSession = null;
+                session.p2.status = "Online";
+            }
+        } else if (session.p2 != null && session.p2.username.equals(leaver)) {
+            if (session.p1 != null) {
+                session.p1.send(m);
+                session.p1.gameSession = null;
+                session.p1.status = "Online";
+            }
         }
         
         Message ms = new Message(Message.Action.ERROR);
@@ -456,10 +467,12 @@ public class GameManager {
         server.log(client.username + " started training with bot (Level " + level + ")");
         
         Message m = new Message(Message.Action.MATCH_FOUND);
+        m.roomId = "TRAINING";
         m.opponentName = "BOT (Lv" + level + ")";
         m.isPlayer1 = true;
         m.isBotMatch = true;
         m.botLevel = level;
+        m.board = botGame.getBoard();
         client.send(m);
         
         broadcastGameState(session);
