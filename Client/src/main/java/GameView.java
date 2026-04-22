@@ -31,8 +31,17 @@ public class GameView {
     
     private VBox chatInputBox;
     private HBox endMatchControls;
+    private HBox spectatorControls;
+    private VBox notificationOverlay;
+    private Label notificationTitle;
+    private Label notificationContent;
+    private HBox notificationButtons;
     private Button surrenderBtn;
     private Button spectatorHomeBtn;
+    private Button viewP1Btn;
+    private Button viewP2Btn;
+    private Button notifyPositiveBtn;
+    private Button notifyNegativeBtn;
     
     private GuiClient mainApp;
     private int[][] lastBoard = new int[8][8];
@@ -58,21 +67,57 @@ public class GameView {
         boardPane = new GridPane();
         boardPane.setHgap(0); boardPane.setVgap(0);
         boardPane.setAlignment(Pos.CENTER);
-        boardPane.setStyle("-fx-background-color: #5C3A21; -fx-background-radius: 8; -fx-border-color: #3B2313; -fx-border-width: 5; -fx-border-radius: 8; -fx-padding: 15;");
-        boardPane.setMaxSize(javafx.scene.layout.Region.USE_PREF_SIZE, javafx.scene.layout.Region.USE_PREF_SIZE);
+        boardPane.setStyle("-fx-background-color: #5C3A21; -fx-background-radius: 8; -fx-border-color: #3B2313; -fx-border-width: 5; -fx-border-radius: 8; -fx-padding: 5;");
         
-        boardStack.layoutBoundsProperty().addListener((obs, oldV, newV) -> {
-            double scale = Math.min(newV.getWidth() / 540.0, newV.getHeight() / 540.0);
-            if (scale > 0) {
-                boardPane.setScaleX(scale);
-                boardPane.setScaleY(scale);
-            }
-        });
+        // Ensure boardPane stays square and fits in boardStack
+        boardPane.maxWidthProperty().bind(javafx.beans.binding.Bindings.min(boardStack.widthProperty(), boardStack.heightProperty()));
+        boardPane.maxHeightProperty().bind(boardPane.maxWidthProperty());
+        boardPane.minWidthProperty().bind(boardPane.maxWidthProperty());
+        boardPane.minHeightProperty().bind(boardPane.maxWidthProperty());
+
+        // Setup 8x8 equal constraints
+        for (int i = 0; i < 8; i++) {
+            javafx.scene.layout.ColumnConstraints cc = new javafx.scene.layout.ColumnConstraints();
+            cc.setPercentWidth(12.5);
+            cc.setHgrow(javafx.scene.layout.Priority.ALWAYS);
+            boardPane.getColumnConstraints().add(cc);
+
+            javafx.scene.layout.RowConstraints rc = new javafx.scene.layout.RowConstraints();
+            rc.setPercentHeight(12.5);
+            rc.setVgrow(javafx.scene.layout.Priority.ALWAYS);
+            boardPane.getRowConstraints().add(rc);
+        }
         
         gameOverOverlay = new Label("YOU LOSE");
         gameOverOverlay.setStyle("-fx-font-size: 60px; -fx-font-weight: bold; -fx-background-color: rgba(0,0,0,0.5); -fx-padding: 20;");
         gameOverOverlay.setVisible(false);
-        boardStack.getChildren().addAll(boardPane, gameOverOverlay);
+        
+        notificationOverlay = new VBox(20);
+        notificationOverlay.setAlignment(Pos.CENTER);
+        notificationOverlay.setStyle("-fx-background-color: rgba(30, 41, 59, 0.95); -fx-padding: 40; -fx-background-radius: 20; -fx-border-color: #4ADE80; -fx-border-width: 3; -fx-border-radius: 20;");
+        notificationOverlay.setMaxSize(450, 250);
+        
+        notificationTitle = new Label("TITLE");
+        notificationTitle.setStyle("-fx-text-fill: white; -fx-font-size: 24px; -fx-font-weight: bold;");
+        
+        notificationContent = new Label("Content goes here...");
+        notificationContent.setStyle("-fx-text-fill: #E2E8F0; -fx-font-size: 16px; -fx-alignment: center;");
+        notificationContent.setWrapText(true);
+        notificationContent.setAlignment(Pos.CENTER);
+        
+        notificationButtons = new HBox(20);
+        notificationButtons.setAlignment(Pos.CENTER);
+        notifyPositiveBtn = new Button("YES");
+        notifyNegativeBtn = new Button("NO");
+        notifyPositiveBtn.getStyleClass().add("button");
+        notifyNegativeBtn.getStyleClass().add("button");
+        
+        notificationButtons.getChildren().addAll(notifyPositiveBtn, notifyNegativeBtn);
+        notificationOverlay.getChildren().addAll(notificationTitle, notificationContent, notificationButtons);
+        notificationOverlay.setVisible(false);
+        notificationOverlay.setManaged(false);
+
+        boardStack.getChildren().addAll(boardPane, gameOverOverlay, notificationOverlay);
 
         VBox rulesSidebar = new VBox(20);
         rulesSidebar.setPadding(new Insets(20));
@@ -156,7 +201,28 @@ public class GameView {
         spectatorHomeBtn.setMinWidth(265);
         spectatorHomeBtn.setVisible(false);
 
-        chatInputBox.getChildren().addAll(chatLine, surrenderBtn, spectatorHomeBtn, rulesBtn);
+        spectatorControls = new HBox(5);
+        spectatorControls.setAlignment(Pos.CENTER);
+        viewP1Btn = new Button("VIEW RED");
+        viewP2Btn = new Button("VIEW BLACK");
+        viewP1Btn.getStyleClass().add("menu-button");
+        viewP2Btn.getStyleClass().add("menu-button");
+        viewP1Btn.setPrefWidth(130);
+        viewP2Btn.setPrefWidth(130);
+        spectatorControls.getChildren().addAll(viewP1Btn, viewP2Btn);
+        spectatorControls.setVisible(false);
+        spectatorControls.setManaged(false);
+
+        chatInputBox.getChildren().addAll(chatLine, surrenderBtn, spectatorHomeBtn, spectatorControls, rulesBtn);
+        
+        viewP1Btn.setOnAction(e -> {
+            mainApp.spectatorViewP1 = true;
+            mainApp.refreshView();
+        });
+        viewP2Btn.setOnAction(e -> {
+            mainApp.spectatorViewP1 = false;
+            mainApp.refreshView();
+        });
         
         sendBtn.setOnAction(e -> {
             if (!chatField.getText().isEmpty()) {
@@ -185,25 +251,45 @@ public class GameView {
             resetUI();
         });
         homeBtn.setOnAction(e -> mainApp.returnToHome());
-        
+
         rightBox.getChildren().addAll(roomIdLabel, playingWithLabel, statusLabel, chatList, chatInputBox, endMatchControls);
         root.setRight(rightBox);
     }
 
     public void updateState(Message data) {
+        gameOverOverlay.setVisible(false);
+        chatInputBox.setVisible(true);
+        endMatchControls.setVisible(false);
         if (data.isSpectator) {
             surrenderBtn.setVisible(false);
             spectatorHomeBtn.setVisible(true);
+            spectatorControls.setVisible(true);
+            spectatorControls.setManaged(true);
+
             String p1 = data.player1Name != null ? data.player1Name : "P1";
             String p2 = data.player2Name != null ? data.player2Name : "P2";
             playingWithLabel.setText("Watching: " + p1 + " vs " + p2);
-            opponentNameLabel.setText(p1);
-            myNameLabel.setText(p2);
-            opponentScoreLabel.setText(String.valueOf(data.p1Score));
-            myScoreLabel.setText(String.valueOf(data.p2Score));
+            
+            if (mainApp.isP1) {
+                opponentNameLabel.setText(p2);
+                myNameLabel.setText(p1);
+                opponentScoreLabel.setText(String.valueOf(data.p2Score));
+                myScoreLabel.setText(String.valueOf(data.p1Score));
+                viewP1Btn.setStyle("-fx-background-color: #4ADE80; -fx-text-fill: white;"); // Highlight selected
+                viewP2Btn.setStyle(""); 
+            } else {
+                opponentNameLabel.setText(p1);
+                myNameLabel.setText(p2);
+                opponentScoreLabel.setText(String.valueOf(data.p1Score));
+                myScoreLabel.setText(String.valueOf(data.p2Score));
+                viewP2Btn.setStyle("-fx-background-color: #4ADE80; -fx-text-fill: white;");
+                viewP1Btn.setStyle("");
+            }
         } else {
             surrenderBtn.setVisible(true);
             spectatorHomeBtn.setVisible(false);
+            spectatorControls.setVisible(false);
+            spectatorControls.setManaged(false);
             
             if (data.opponentName != null) {
                 currentOpponent = data.opponentName;
@@ -292,8 +378,8 @@ public class GameView {
 
     private VBox createTile(int x, int y, int piece, boolean isPath) {
         VBox cell = new VBox();
-        cell.setPrefSize(60, 60);
         cell.setAlignment(Pos.CENTER);
+        cell.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
         
         if ((x + y) % 2 == 0) {
             cell.setStyle("-fx-background-color: #F8CB9C;"); // Light wood
@@ -304,11 +390,12 @@ public class GameView {
         if (x == mainApp.selectedX && y == mainApp.selectedY) {
             cell.setStyle(cell.getStyle() + "-fx-background-color: #4ADE80; -fx-opacity: 0.8;"); // Green highlight
         } else if (isPath) {
-            cell.setStyle(cell.getStyle() + "-fx-background-color: #FBBF24; -fx-opacity: 0.6;"); // Yellow highlight
+            cell.setStyle(cell.getStyle() + "-fx-background-color: #BBF7D0; -fx-opacity: 0.6;"); // Light Green highlight
         }
         
         if (piece != 0) {
-            Circle c = new Circle(22);
+            Circle c = new Circle();
+            c.radiusProperty().bind(cell.widthProperty().divide(2.5)); // Dynamic radius
             c.setStrokeType(javafx.scene.shape.StrokeType.INSIDE);
             c.setStrokeWidth(3);
             
@@ -322,7 +409,8 @@ public class GameView {
             }
             
             // Inner circle for sleek look
-            Circle innerObj = new Circle(14);
+            Circle innerObj = new Circle();
+            innerObj.radiusProperty().bind(c.radiusProperty().divide(1.5));
             innerObj.setFill(Color.TRANSPARENT);
             innerObj.setStrokeWidth(2);
             
@@ -331,7 +419,7 @@ public class GameView {
             
             if (piece == 3 || piece == 4) { // Kings
                 Label kingIcon = new Label("♕");
-                kingIcon.setStyle("-fx-text-fill: #F59E0B; -fx-font-size: 24px; -fx-font-weight: bold;");
+                kingIcon.styleProperty().bind(javafx.beans.binding.Bindings.concat("-fx-text-fill: #F59E0B; -fx-font-weight: bold; -fx-font-size: ", cell.widthProperty().divide(2.5).asString()));
                 VBox stack = new VBox(kingIcon);
                 stack.setAlignment(Pos.CENTER);
                 cell.getChildren().addAll(new javafx.scene.layout.StackPane(c, innerObj, stack));
@@ -370,7 +458,87 @@ public class GameView {
         gameOverOverlay.setVisible(false);
         chatInputBox.setVisible(true);
         endMatchControls.setVisible(false);
+        spectatorControls.setVisible(false);
+        spectatorControls.setManaged(false);
+        notificationOverlay.setVisible(false);
+        notificationOverlay.setManaged(false);
         currentOpponent = "----";
+        setBotMatchMode(false); // Restore default
+    }
+
+    public void setBotMatchMode(boolean isBot) {
+        playingWithLabel.setVisible(!isBot);
+        playingWithLabel.setManaged(!isBot);
+        chatList.setVisible(!isBot);
+        chatList.setManaged(!isBot);
+        chatInputBox.setVisible(!isBot);
+        chatInputBox.setManaged(!isBot);
+        scoreCol.setVisible(!isBot);
+        scoreCol.setManaged(!isBot);
+        
+        if (isBot) {
+            statusLabel.setText("TRAINING MODE");
+        }
+    }
+
+    public void showRematchRequest() {
+        notificationTitle.setText("REMATCH REQUESTED!");
+        notificationContent.setText("Your opponent wants a rematch.\nDo you accept?");
+        notifyPositiveBtn.setText("YES");
+        notifyPositiveBtn.setStyle("-fx-background-color: #10B981; -fx-pref-width: 100;");
+        notifyNegativeBtn.setText("NO");
+        notifyNegativeBtn.setStyle("-fx-background-color: #EF4444; -fx-pref-width: 100;");
+        notifyNegativeBtn.setVisible(true);
+        notifyNegativeBtn.setManaged(true);
+        
+        notifyPositiveBtn.setOnAction(e -> {
+            mainApp.clientConnection.send(new Message(Message.Action.REMATCH_ACCEPT));
+            notificationOverlay.setVisible(false);
+            notificationOverlay.setManaged(false);
+        });
+        
+        notifyNegativeBtn.setOnAction(e -> {
+            mainApp.clientConnection.send(new Message(Message.Action.REMATCH_DECLINE));
+            mainApp.returnToHome();
+        });
+        
+        notificationOverlay.setVisible(true);
+        notificationOverlay.setManaged(true);
+    }
+    
+    public void showOpponentLeft(String leaver, String reason) {
+        notificationTitle.setText("MATCH ENDED");
+        if ("SERVER_DISCONNECT".equals(reason)) {
+            notificationContent.setText(leaver + " has left the server.\nYou win by forfeit!");
+        } else {
+            notificationContent.setText(leaver + " has left the match.");
+        }
+        notifyPositiveBtn.setText("HOME");
+        notifyPositiveBtn.setStyle("-fx-background-color: #3B82F6; -fx-pref-width: 150;");
+        notifyNegativeBtn.setVisible(false);
+        notifyNegativeBtn.setManaged(false);
+        
+        notifyPositiveBtn.setOnAction(e -> mainApp.returnToHome());
+        
+        notificationOverlay.setVisible(true);
+        notificationOverlay.setManaged(true);
+    }
+    
+    public void showGenericNotification(String title, String content) {
+        notificationTitle.setText(title);
+        notificationContent.setText(content);
+        notifyPositiveBtn.setText("OK");
+        notifyPositiveBtn.setStyle("-fx-background-color: #3B82F6; -fx-pref-width: 120;");
+        notifyNegativeBtn.setVisible(false);
+        notifyNegativeBtn.setManaged(false);
+        
+        notifyPositiveBtn.setOnAction(e -> {
+            notificationOverlay.setVisible(false);
+            notificationOverlay.setManaged(false);
+        });
+        
+        notificationOverlay.setVisible(true);
+        notificationOverlay.setManaged(true);
     }
 
     public void addChatMessage(String msg) { chatList.getItems().add(msg); }

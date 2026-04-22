@@ -25,7 +25,11 @@ public class Message implements Serializable {
         SURRENDER,
         REMATCH,
         GLOBAL_CHAT,
-        CANCEL_WAITING
+        CANCEL_WAITING,
+        REMATCH_REQUEST,
+        REMATCH_ACCEPT,
+        REMATCH_DECLINE,
+        PLAY_BOT
     }
 
     public Action action;
@@ -37,6 +41,8 @@ public class Message implements Serializable {
     public ArrayList<String> playerList;
     public HashMap<String, String> playerStatusMap;
     public String roomId;
+    public boolean isBotMatch;
+    public int botLevel;
 
     // Movement details
     public int startX = -1;
