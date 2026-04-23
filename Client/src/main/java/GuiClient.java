@@ -23,11 +23,13 @@ public class GuiClient extends Application {
     
     // View References
     LoginView loginView;
+    SignupView signupView;
     HomeView homeView;
     GameView gameView;
     
     // Persistent Scenes
     Scene loginScene;
+    Scene signupScene;
     Scene homeScene;
     Scene gameScene;
     Scene waitingScene;
@@ -58,11 +60,13 @@ public class GuiClient extends Application {
 
         // Initialize views
         loginView = new LoginView(this);
+        signupView = new SignupView(this);
         homeView = new HomeView(this);
         gameView = new GameView(this);
 
         // Create persistent scenes
         loginScene = new Scene(loginView.getRoot(), 500, 450);
+        signupScene = new Scene(signupView.getRoot(), 500, 450);
         homeScene = new Scene(homeView.getRoot(), 1150, 750);
         gameScene = new Scene(gameView.getRoot(), 1150, 750);
         waitingScene = createWaitingGui();
@@ -77,11 +81,30 @@ public class GuiClient extends Application {
         primaryStage.show();
     }
     
-    public void onLoginAttempt(String user) {
+    public void onLoginAttempt(String user, String pass) {
         this.loggedInUser = user;
         Message m = new Message(Message.Action.LOGIN);
         m.username = user;
+        m.password = pass;
         clientConnection.send(m);
+    }
+
+    public void onSignupAttempt(String user, String pass) {
+        Message m = new Message(Message.Action.SIGNUP);
+        m.username = user;
+        m.password = pass;
+        clientConnection.send(m);
+    }
+    
+    public void showSignupPage() {
+        signupView.clearFields();
+        primaryStage.setScene(signupScene);
+        primaryStage.setTitle("Checkers - Sign Up");
+    }
+    
+    public void showLoginPage() {
+        primaryStage.setScene(loginScene);
+        primaryStage.setTitle("Checkers Login");
     }
 
     public void onFindMatch() {
@@ -133,6 +156,17 @@ public class GuiClient extends Application {
         else if (data.action == Message.Action.LOGIN_FAIL) {
             new Alert(AlertType.ERROR, "Login Failed: " + data.content).show();
         } 
+        else if (data.action == Message.Action.SIGNUP_FAIL) {
+            new Alert(AlertType.ERROR, "Signup Failed: " + data.content).show();
+        }
+        else if (data.action == Message.Action.SIGNUP_SUCCESS) {
+            Alert alert = new Alert(AlertType.INFORMATION);
+            alert.setTitle("Signup Successful");
+            alert.setHeaderText(null);
+            alert.setContentText("Your account has been created! You can now log in.");
+            alert.showAndWait();
+            showLoginPage();
+        }
         else if (data.action == Message.Action.MATCH_FOUND || data.action == Message.Action.GAME_STATE_UPDATE) {
             if (primaryStage.getScene() != gameScene) {
                 primaryStage.setScene(gameScene);
@@ -147,7 +181,7 @@ public class GuiClient extends Application {
                 primaryStage.setTitle("Checkers Room #" + data.roomId);
                 gameView.addChatMessage("System: Joined match " + data.roomId);
                 gameView.resetUI();
-                gameView.setBotMatchMode(data.isBotMatch);
+                gameView.setBotMatchMode(data.isBotMatch, data.botLevel);
             }
             
             if (data.isSpectator) {

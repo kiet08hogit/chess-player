@@ -29,7 +29,10 @@ public class Message implements Serializable {
         REMATCH_REQUEST,
         REMATCH_ACCEPT,
         REMATCH_DECLINE,
-        PLAY_BOT
+        PLAY_BOT,
+        SIGNUP,
+        SIGNUP_SUCCESS,
+        SIGNUP_FAIL
     }
 
     public Action action;
@@ -58,6 +61,9 @@ public class Message implements Serializable {
     public boolean isMyTurn;
     public String gameStatus;
     public boolean isSpectator;
+    
+    // Auth & Info
+    public String password;
     
     // Scores
     public int p1Score;

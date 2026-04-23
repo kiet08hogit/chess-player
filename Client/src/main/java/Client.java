@@ -15,7 +15,6 @@ public class Client extends Thread {
     Client(Consumer<Serializable> call) {
         callback = call;
     }
-    
     public void run() {
         try {
             socketClient = new Socket("127.0.0.1", 5555);
@@ -31,12 +30,10 @@ public class Client extends Thread {
                 Message message = (Message) in.readObject();
                 callback.accept(message);
             } catch(Exception e) {
-                // Connection lost or error
                 break;
             }
         }
     }
-    
     public void send(Message data) {
         try {
             if (out != null) {

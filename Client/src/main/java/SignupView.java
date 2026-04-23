@@ -3,20 +3,20 @@ import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
 import javafx.scene.control.PasswordField;
-import javafx.scene.layout.VBox;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 
-public class LoginView {
+public class SignupView {
     private VBox root;
     private TextField userField;
     private PasswordField passField;
-    private Button loginBtn;
-    private Button signupBtn;
+    private Button registerBtn;
+    private Button backBtn;
     private GuiClient mainApp;
 
-    public LoginView(GuiClient mainApp) {
+    public SignupView(GuiClient mainApp) {
         this.mainApp = mainApp;
         createGui();
     }
@@ -34,29 +34,29 @@ public class LoginView {
         card.getStyleClass().add("login-card");
         card.setMaxWidth(350);
         
-        Label icon = new Label("♛");
-        icon.setStyle("-fx-font-size: 48px; -fx-text-fill: #EF4444;");
+        Label icon = new Label("♟");
+        icon.setStyle("-fx-font-size: 48px; -fx-text-fill: #3B82F6;");
 
-        Label title = new Label("Checkers Pal");
+        Label title = new Label("Create Account");
         title.getStyleClass().add("title-label");
         
-        Label subtitle = new Label("Enter the arena and challenge the world.");
+        Label subtitle = new Label("Join the checkers community.");
         subtitle.setStyle("-fx-text-fill: #9CA3AF; -fx-font-size: 13px;");
         
         VBox inputSection = new VBox(10);
         inputSection.setAlignment(Pos.CENTER_LEFT);
         
         VBox userBox = new VBox(5);
-        Label userLabel = new Label("Username");
+        Label userLabel = new Label("Choose Username");
         userLabel.setStyle("-fx-text-fill: #9CA3AF; -fx-font-size: 12px; -fx-font-weight: bold;");
         userField = new TextField();
-        userField.setPromptText("Enter a username");
+        userField.setPromptText("Enter a unique username");
         userField.setPrefHeight(40);
         userField.getStyleClass().add("text-field");
         userBox.getChildren().addAll(userLabel, userField);
         
         VBox passBox = new VBox(5);
-        Label passLabel = new Label("Password");
+        Label passLabel = new Label("Choose Password");
         passLabel.setStyle("-fx-text-fill: #9CA3AF; -fx-font-size: 12px; -fx-font-weight: bold;");
         passField = new PasswordField();
         passField.setPromptText("Enter a password");
@@ -69,29 +69,35 @@ public class LoginView {
         HBox btnBox = new HBox(10);
         btnBox.setAlignment(Pos.CENTER);
         
-        loginBtn = new Button("Login");
-        loginBtn.setPrefWidth(160);
-        loginBtn.getStyleClass().add("button");
-        loginBtn.setOnAction(e -> {
+        backBtn = new Button("Back");
+        backBtn.setPrefWidth(120);
+        backBtn.getStyleClass().add("button");
+        backBtn.setStyle("-fx-background-color: #6B7280;");
+        backBtn.setOnAction(e -> {
+            mainApp.showLoginPage();
+        });
+        
+        registerBtn = new Button("Register");
+        registerBtn.setPrefWidth(200);
+        registerBtn.getStyleClass().add("button");
+        registerBtn.setStyle("-fx-background-color: #3B82F6;");
+        registerBtn.setOnAction(e -> {
             String user = userField.getText().trim();
             String pass = passField.getText();
             if (!user.isEmpty() && !pass.isEmpty()) {
-                mainApp.onLoginAttempt(user, pass);
+                mainApp.onSignupAttempt(user, pass);
             }
         });
         
-        signupBtn = new Button("Sign Up");
-        signupBtn.setPrefWidth(160);
-        signupBtn.getStyleClass().add("button");
-        signupBtn.setStyle("-fx-background-color: #3B82F6;");
-        signupBtn.setOnAction(e -> {
-            mainApp.showSignupPage();
-        });
-        
-        btnBox.getChildren().addAll(loginBtn, signupBtn);
+        btnBox.getChildren().addAll(backBtn, registerBtn);
         
         card.getChildren().addAll(icon, title, subtitle, inputSection, btnBox);
         root.getChildren().add(card);
+    }
+
+    public void clearFields() {
+        userField.clear();
+        passField.clear();
     }
 
     public Parent getRoot() {
