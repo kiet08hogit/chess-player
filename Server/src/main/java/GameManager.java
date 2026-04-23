@@ -11,6 +11,7 @@ public class GameManager {
     
     private Server server;
     private Random random = new Random();
+    private DatabaseManager db = new DatabaseManager();
 
     public GameManager(Server server) {
         this.server = server;
@@ -24,10 +25,15 @@ public class GameManager {
         return id;
     }
 
-    public synchronized boolean login(String username, Server.ClientThread client) {
+    public synchronized boolean login(String username, String password, Server.ClientThread client) {
         if (onlineUsers.containsKey(username)) {
             return false;
         }
+        
+        if (!db.authenticateUser(username, password)) {
+            return false;
+        }
+        
         onlineUsers.put(username, client);
         client.username = username;
         
@@ -38,6 +44,21 @@ public class GameManager {
         
         // Send LOGIN_SUCCESS immediately
         client.send(new Message(Message.Action.LOGIN_SUCCESS));
+        
+        return true;
+    }
+
+    public synchronized boolean signup(String username, String password, Server.ClientThread client) {
+        if (onlineUsers.containsKey(username)) {
+            return false;
+        }
+        
+        if (!db.registerUser(username, password)) {
+            return false;
+        }
+        
+        server.log("New user registered: " + username);
+        client.send(new Message(Message.Action.SIGNUP_SUCCESS));
         
         return true;
     }
@@ -74,6 +95,10 @@ public class GameManager {
                     displayStatus = "in a game #" + c.gameSession.roomId;
                 }
             }
+            
+            int[] stats = db.getStats(uname);
+            displayStatus += " [W:" + stats[0] + " L:" + stats[1] + "]";
+            
             statusMap.put(uname, displayStatus);
         }
         msg.playerStatusMap = statusMap;
@@ -281,8 +306,16 @@ public class GameManager {
                 String winner = (client == session.p1) ? session.p2.username : session.p1.username;
                 session.game.setGameOver(winner);
                 
-                if (winner.equals(session.p1.username)) session.p1Score++;
-                else session.p2Score++;
+                if (winner.equals(session.p1.username)) {
+                    session.p1Score++;
+                } else {
+                    session.p2Score++;
+                }
+                
+                if (!session.isBotMatch) {
+                    db.addWin(winner);
+                    db.addLoss(client.username);
+                }
                 
                 server.log(client.username + " surrendered, " + winner + " won. Room ID: #" + session.roomId + " [Score: " + session.p1Score + "-" + session.p2Score + "]");
                 
@@ -351,6 +384,11 @@ public class GameManager {
                     } else {
                         session.p2Score++;
                         loser = session.p1.username;
+                    }
+                    
+                    if (!session.isBotMatch) {
+                        db.addWin(winner);
+                        db.addLoss(loser);
                     }
                     
                     server.log(winner + " won against " + loser + ". Room ID: #" + session.roomId + " [Score: " + session.p1Score + "-" + session.p2Score + "]");

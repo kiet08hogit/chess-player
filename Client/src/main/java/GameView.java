@@ -28,7 +28,7 @@ public class GameView {
     private Label myNameLabel;
     private Label opponentNameLabel;
     private Label gameOverOverlay;
-    
+
     private VBox chatInputBox;
     private HBox chatLine;
     private HBox endMatchControls;
@@ -44,7 +44,7 @@ public class GameView {
     private Button viewP2Btn;
     private Button notifyPositiveBtn;
     private Button notifyNegativeBtn;
-    
+
     private GuiClient mainApp;
     private int[][] lastBoard = new int[8][8];
     private String currentOpponent = "----";
@@ -58,21 +58,25 @@ public class GameView {
         root = new BorderPane();
         try {
             root.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
-        } catch (Exception e) {}
+        } catch (Exception e) {
+        }
         root.getStyleClass().add("game-root");
-        
+
         HBox mainContent = new HBox(20);
         mainContent.setAlignment(Pos.CENTER);
         mainContent.setPadding(new Insets(10));
 
         StackPane boardStack = new StackPane();
         boardPane = new GridPane();
-        boardPane.setHgap(0); boardPane.setVgap(0);
+        boardPane.setHgap(0);
+        boardPane.setVgap(0);
         boardPane.setAlignment(Pos.CENTER);
-        boardPane.setStyle("-fx-background-color: #5C3A21; -fx-background-radius: 8; -fx-border-color: #3B2313; -fx-border-width: 5; -fx-border-radius: 8; -fx-padding: 5;");
-        
+        boardPane.setStyle(
+                "-fx-background-color: #5C3A21; -fx-background-radius: 8; -fx-border-color: #3B2313; -fx-border-width: 5; -fx-border-radius: 8; -fx-padding: 5;");
+
         // Ensure boardPane stays square and fits in boardStack
-        boardPane.maxWidthProperty().bind(javafx.beans.binding.Bindings.min(boardStack.widthProperty(), boardStack.heightProperty()));
+        boardPane.maxWidthProperty()
+                .bind(javafx.beans.binding.Bindings.min(boardStack.widthProperty(), boardStack.heightProperty()));
         boardPane.maxHeightProperty().bind(boardPane.maxWidthProperty());
         boardPane.minWidthProperty().bind(boardPane.maxWidthProperty());
         boardPane.minHeightProperty().bind(boardPane.maxWidthProperty());
@@ -89,31 +93,33 @@ public class GameView {
             rc.setVgrow(javafx.scene.layout.Priority.ALWAYS);
             boardPane.getRowConstraints().add(rc);
         }
-        
+
         gameOverOverlay = new Label("YOU LOSE");
-        gameOverOverlay.setStyle("-fx-font-size: 60px; -fx-font-weight: bold; -fx-background-color: rgba(0,0,0,0.5); -fx-padding: 20;");
+        gameOverOverlay.setStyle(
+                "-fx-font-size: 60px; -fx-font-weight: bold; -fx-background-color: rgba(0,0,0,0.5); -fx-padding: 20;");
         gameOverOverlay.setVisible(false);
-        
+
         notificationOverlay = new VBox(20);
         notificationOverlay.setAlignment(Pos.CENTER);
-        notificationOverlay.setStyle("-fx-background-color: rgba(30, 41, 59, 0.95); -fx-padding: 40; -fx-background-radius: 20; -fx-border-color: #4ADE80; -fx-border-width: 3; -fx-border-radius: 20;");
+        notificationOverlay.setStyle(
+                "-fx-background-color: rgba(30, 41, 59, 0.95); -fx-padding: 40; -fx-background-radius: 20; -fx-border-color: #4ADE80; -fx-border-width: 3; -fx-border-radius: 20;");
         notificationOverlay.setMaxSize(450, 250);
-        
+
         notificationTitle = new Label("TITLE");
         notificationTitle.setStyle("-fx-text-fill: white; -fx-font-size: 24px; -fx-font-weight: bold;");
-        
+
         notificationContent = new Label("Content goes here...");
         notificationContent.setStyle("-fx-text-fill: #E2E8F0; -fx-font-size: 16px; -fx-alignment: center;");
         notificationContent.setWrapText(true);
         notificationContent.setAlignment(Pos.CENTER);
-        
+
         notificationButtons = new HBox(20);
         notificationButtons.setAlignment(Pos.CENTER);
         notifyPositiveBtn = new Button("YES");
         notifyNegativeBtn = new Button("NO");
         notifyPositiveBtn.getStyleClass().add("button");
         notifyNegativeBtn.getStyleClass().add("button");
-        
+
         notificationButtons.getChildren().addAll(notifyPositiveBtn, notifyNegativeBtn);
         notificationOverlay.getChildren().addAll(notificationTitle, notificationContent, notificationButtons);
         notificationOverlay.setVisible(false);
@@ -125,19 +131,18 @@ public class GameView {
         rulesSidebar.setPadding(new Insets(20));
         rulesSidebar.setPrefWidth(280);
         rulesSidebar.getStyleClass().add("sidebar");
-        
+
         Label rulesTitle = new Label("How to Play");
         rulesTitle.getStyleClass().add("title-label");
         rulesTitle.setStyle("-fx-font-size: 22px;");
-        
+
         Label rulesText = new Label(
-            "1. Red always moves first.\n\n" +
-            "2. Pieces move diagonally forward to an empty square.\n\n" +
-            "3. Jump over an opponent's piece to capture it.\n\n" +
-            "4. Reach the opposite end of the board to become a King.\n\n" +
-            "5. Kings can move and jump both forward and backward.\n\n" +
-            "6. Win by capturing all of your opponent's pieces."
-        );
+                "1. Red always moves first.\n\n" +
+                        "2. Pieces move diagonally forward to an empty square.\n\n" +
+                        "3. Jump over an opponent's piece to capture it.\n\n" +
+                        "4. Reach the opposite end of the board to become a King.\n\n" +
+                        "5. Kings can move and jump both forward and backward.\n\n" +
+                        "6. Win by capturing all of your opponent's pieces.");
         rulesText.setWrapText(true);
         rulesText.setStyle("-fx-text-fill: #9CA3AF; -fx-font-size: 14px; -fx-line-spacing: 4px;");
         rulesSidebar.getChildren().addAll(rulesTitle, rulesText);
@@ -148,31 +153,34 @@ public class GameView {
         opponentScoreLabel.setStyle("-fx-font-size: 30px; -fx-text-fill: #e74c3c; -fx-font-weight: bold;");
         myScoreLabel = new Label("0");
         myScoreLabel.setStyle("-fx-font-size: 30px; -fx-text-fill: #2ecc71; -fx-font-weight: bold;");
-        opponentNameLabel = new Label("OPPONENT"); opponentNameLabel.setStyle("-fx-text-fill: white; -fx-font-weight: bold;");
-        myNameLabel = new Label("YOU"); myNameLabel.setStyle("-fx-text-fill: white; -fx-font-weight: bold;");
-        scoreCol.getChildren().addAll(new VBox(5, opponentNameLabel, opponentScoreLabel), new VBox(5, myNameLabel, myScoreLabel));
-        ((VBox)scoreCol.getChildren().get(0)).setAlignment(Pos.CENTER);
-        ((VBox)scoreCol.getChildren().get(1)).setAlignment(Pos.CENTER);
+        opponentNameLabel = new Label("OPPONENT");
+        opponentNameLabel.setStyle("-fx-text-fill: white; -fx-font-weight: bold;");
+        myNameLabel = new Label("YOU");
+        myNameLabel.setStyle("-fx-text-fill: white; -fx-font-weight: bold;");
+        scoreCol.getChildren().addAll(new VBox(5, opponentNameLabel, opponentScoreLabel),
+                new VBox(5, myNameLabel, myScoreLabel));
+        ((VBox) scoreCol.getChildren().get(0)).setAlignment(Pos.CENTER);
+        ((VBox) scoreCol.getChildren().get(1)).setAlignment(Pos.CENTER);
 
         mainContent.getChildren().addAll(boardStack, scoreCol);
         root.setCenter(mainContent);
-        
+
         VBox rightBox = new VBox(15);
         rightBox.setPadding(new Insets(10));
-        rightBox.setPrefWidth(320); 
+        rightBox.setPrefWidth(320);
         rightBox.setAlignment(Pos.TOP_CENTER);
-        
+
         roomIdLabel = new Label("Room ID: #----");
         roomIdLabel.setStyle("-fx-text-fill: #999; -fx-font-size: 14px; -fx-font-weight: bold;");
         playingWithLabel = new Label("Playing with: ----");
         playingWithLabel.setStyle("-fx-text-fill: #007bff; -fx-font-size: 16px; -fx-font-weight: bold;");
         statusLabel = new Label("Ready to Play");
         statusLabel.getStyleClass().add("status-label");
-        
+
         chatList = new ListView<>();
         chatList.getStyleClass().add("chat-list");
         chatList.setPrefHeight(350);
-        
+
         chatInputBox = new VBox(10);
         chatInputBox.setAlignment(Pos.CENTER);
         chatLine = new HBox(5);
@@ -182,11 +190,11 @@ public class GameView {
         Button sendBtn = new Button("SEND");
         sendBtn.setMinWidth(80);
         chatLine.getChildren().addAll(chatField, sendBtn);
-        
+
         surrenderBtn = new Button("SURRENDER");
         surrenderBtn.getStyleClass().add("surrender-button");
-        surrenderBtn.setMinWidth(265); 
-        
+        surrenderBtn.setMinWidth(265);
+
         Button rulesBtn = new Button("RULES");
         rulesBtn.getStyleClass().add("menu-button");
         rulesBtn.setMinWidth(265);
@@ -197,7 +205,7 @@ public class GameView {
                 root.setLeft(null);
             }
         });
-        
+
         spectatorHomeBtn = new Button("HOME");
         spectatorHomeBtn.getStyleClass().add("menu-button");
         spectatorHomeBtn.setMinWidth(265);
@@ -216,7 +224,7 @@ public class GameView {
         spectatorControls.setManaged(false);
 
         chatInputBox.getChildren().addAll(chatLine, surrenderBtn, spectatorHomeBtn, spectatorControls, rulesBtn);
-        
+
         viewP1Btn.setOnAction(e -> {
             mainApp.spectatorViewP1 = true;
             mainApp.refreshView();
@@ -225,7 +233,7 @@ public class GameView {
             mainApp.spectatorViewP1 = false;
             mainApp.refreshView();
         });
-        
+
         sendBtn.setOnAction(e -> {
             if (!chatField.getText().isEmpty()) {
                 Message m = new Message(Message.Action.CHAT_MESSAGE);
@@ -235,7 +243,7 @@ public class GameView {
                 chatField.clear();
             }
         });
-        
+
         surrenderBtn.setOnAction(e -> mainApp.clientConnection.send(new Message(Message.Action.SURRENDER)));
         spectatorHomeBtn.setOnAction(e -> mainApp.returnToHome());
 
@@ -247,14 +255,15 @@ public class GameView {
         homeBtn.getStyleClass().add("menu-button");
         endMatchControls.getChildren().addAll(rematchBtn, homeBtn);
         endMatchControls.setVisible(false);
-        
+
         rematchBtn.setOnAction(e -> {
             mainApp.clientConnection.send(new Message(Message.Action.REMATCH));
             resetUI();
         });
         homeBtn.setOnAction(e -> mainApp.returnToHome());
 
-        rightBox.getChildren().addAll(roomIdLabel, playingWithLabel, statusLabel, chatList, chatInputBox, endMatchControls);
+        rightBox.getChildren().addAll(roomIdLabel, playingWithLabel, statusLabel, chatList, chatInputBox,
+                endMatchControls);
         root.setRight(rightBox);
     }
 
@@ -271,14 +280,14 @@ public class GameView {
             String p1 = data.player1Name != null ? data.player1Name : "P1";
             String p2 = data.player2Name != null ? data.player2Name : "P2";
             playingWithLabel.setText("Watching: " + p1 + " vs " + p2);
-            
+
             if (mainApp.isP1) {
                 opponentNameLabel.setText(p2);
                 myNameLabel.setText(p1);
                 opponentScoreLabel.setText(String.valueOf(data.p2Score));
                 myScoreLabel.setText(String.valueOf(data.p1Score));
                 viewP1Btn.setStyle("-fx-background-color: #4ADE80; -fx-text-fill: white;"); // Highlight selected
-                viewP2Btn.setStyle(""); 
+                viewP2Btn.setStyle("");
             } else {
                 opponentNameLabel.setText(p1);
                 myNameLabel.setText(p2);
@@ -292,12 +301,12 @@ public class GameView {
             spectatorHomeBtn.setVisible(false);
             spectatorControls.setVisible(false);
             spectatorControls.setManaged(false);
-            
+
             if (data.opponentName != null) {
                 currentOpponent = data.opponentName;
             }
             playingWithLabel.setText("Playing with: " + currentOpponent);
-            
+
             myNameLabel.setText("YOU (" + mainApp.loggedInUser + ")");
             opponentNameLabel.setText(currentOpponent);
             if (mainApp.isP1) {
@@ -309,7 +318,8 @@ public class GameView {
             }
         }
         statusLabel.setText(data.gameStatus);
-        if (data.roomId != null) roomIdLabel.setText("Room ID: #" + data.roomId);
+        if (data.roomId != null)
+            roomIdLabel.setText("Room ID: #" + data.roomId);
         if (data.board != null) {
             lastBoard = data.board;
             drawBoard();
@@ -322,17 +332,17 @@ public class GameView {
         boolean isP1Piece = (piece == 1 || piece == 3);
         int dyForward = isP1Piece ? -1 : 1;
 
-        int[] dirs = isKing ? new int[]{-1, 1} : new int[]{dyForward};
-        
+        int[] dirs = isKing ? new int[] { -1, 1 } : new int[] { dyForward };
+
         for (int dy : dirs) {
-            for (int dx : new int[]{-1, 1}) {
+            for (int dx : new int[] { -1, 1 }) {
                 int nx = x + dx;
                 int ny = y + dy;
                 // Regular move
                 if (nx >= 0 && nx < 8 && ny >= 0 && ny < 8 && lastBoard[nx][ny] == 0) {
-                    moves.add(new int[]{nx, ny});
+                    moves.add(new int[] { nx, ny });
                 }
-                
+
                 // Jump move
                 int jx = x + 2 * dx;
                 int jy = y + 2 * dy;
@@ -342,7 +352,7 @@ public class GameView {
                         if (midPiece != 0) {
                             boolean midIsP1 = (midPiece == 1 || midPiece == 3);
                             if (isP1Piece != midIsP1) {
-                                moves.add(new int[]{jx, jy});
+                                moves.add(new int[] { jx, jy });
                             }
                         }
                     }
@@ -354,7 +364,7 @@ public class GameView {
 
     public void drawBoard() {
         boardPane.getChildren().clear();
-        
+
         List<int[]> validMoves = new ArrayList<>();
         if (mainApp.selectedX != -1 && mainApp.selectedY != -1) {
             int selectedPiece = lastBoard[mainApp.selectedX][mainApp.selectedY];
@@ -372,8 +382,10 @@ public class GameView {
                     }
                 }
                 VBox tile = createTile(x, y, piece, isPath);
-                if (mainApp.isP1) boardPane.add(tile, x, y);
-                else boardPane.add(tile, 7 - x, 7 - y);
+                if (mainApp.isP1)
+                    boardPane.add(tile, x, y);
+                else
+                    boardPane.add(tile, 7 - x, 7 - y);
             }
         }
     }
@@ -382,25 +394,26 @@ public class GameView {
         VBox cell = new VBox();
         cell.setAlignment(Pos.CENTER);
         cell.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
-        
+
         if ((x + y) % 2 == 0) {
             cell.setStyle("-fx-background-color: #F8CB9C;"); // Light wood
         } else {
             cell.setStyle("-fx-background-color: #D28C45;"); // Dark wood
         }
-        
+
         if (x == mainApp.selectedX && y == mainApp.selectedY) {
             cell.setStyle(cell.getStyle() + "-fx-background-color: #4ADE80; -fx-opacity: 0.8;"); // Green highlight
         } else if (isPath) {
-            cell.setStyle(cell.getStyle() + "-fx-background-color: #BBF7D0; -fx-opacity: 0.6;"); // Light Green highlight
+            cell.setStyle(cell.getStyle() + "-fx-background-color: #BBF7D0; -fx-opacity: 0.6;"); // Light Green
+                                                                                                 // highlight
         }
-        
+
         if (piece != 0) {
             Circle c = new Circle();
             c.radiusProperty().bind(cell.widthProperty().divide(2.5)); // Dynamic radius
             c.setStrokeType(javafx.scene.shape.StrokeType.INSIDE);
             c.setStrokeWidth(3);
-            
+
             if (piece == 1 || piece == 3) {
                 c.setFill(Color.web("#EF4444")); // Red piece
                 c.setStroke(Color.web("#B91C1C")); // Darker red border
@@ -409,19 +422,24 @@ public class GameView {
                 c.setFill(Color.web("#1E293B")); // Dark piece
                 c.setStroke(Color.web("#0F172A")); // Darker border
             }
-            
+
             // Inner circle for sleek look
             Circle innerObj = new Circle();
             innerObj.radiusProperty().bind(c.radiusProperty().divide(1.5));
             innerObj.setFill(Color.TRANSPARENT);
             innerObj.setStrokeWidth(2);
-            
-            if (piece == 1 || piece == 3) innerObj.setStroke(Color.web("#DC2626"));
-            if (piece == 2 || piece == 4) innerObj.setStroke(Color.web("#334155"));
-            
+
+            if (piece == 1 || piece == 3)
+                innerObj.setStroke(Color.web("#DC2626"));
+            if (piece == 2 || piece == 4)
+                innerObj.setStroke(Color.web("#334155"));
+
             if (piece == 3 || piece == 4) { // Kings
                 Label kingIcon = new Label("♕");
-                kingIcon.styleProperty().bind(javafx.beans.binding.Bindings.concat("-fx-text-fill: #F59E0B; -fx-font-weight: bold; -fx-font-size: ", cell.widthProperty().divide(2.5).asString()));
+                kingIcon.styleProperty()
+                        .bind(javafx.beans.binding.Bindings.concat(
+                                "-fx-text-fill: #F59E0B; -fx-font-weight: bold; -fx-font-size: ",
+                                cell.widthProperty().divide(2.5).asString()));
                 VBox stack = new VBox(kingIcon);
                 stack.setAlignment(Pos.CENTER);
                 cell.getChildren().addAll(new javafx.scene.layout.StackPane(c, innerObj, stack));
@@ -429,10 +447,12 @@ public class GameView {
                 cell.getChildren().add(new javafx.scene.layout.StackPane(c, innerObj));
             }
         }
-        
+
         cell.setOnMouseClicked(e -> {
-            if (mainApp.isSpectatorMode) return;
-            if ((x + y) % 2 == 0) return;
+            if (mainApp.isSpectatorMode)
+                return;
+            if ((x + y) % 2 == 0)
+                return;
             mainApp.handleTileClick(x, y, piece);
         });
         return cell;
@@ -465,10 +485,10 @@ public class GameView {
         notificationOverlay.setVisible(false);
         notificationOverlay.setManaged(false);
         currentOpponent = "----";
-        setBotMatchMode(false); // Restore default
+        setBotMatchMode(false, 0); // Restore default
     }
 
-    public void setBotMatchMode(boolean isBot) {
+    public void setBotMatchMode(boolean isBot, int level) {
         playingWithLabel.setVisible(!isBot);
         playingWithLabel.setManaged(!isBot);
         chatList.setVisible(!isBot);
@@ -477,9 +497,9 @@ public class GameView {
         chatLine.setManaged(!isBot);
         scoreCol.setVisible(!isBot);
         scoreCol.setManaged(!isBot);
-        
+
         if (isBot) {
-            statusLabel.setText("TRAINING MODE");
+            statusLabel.setText("TRAINING MODE (Level " + level + ")");
             roomIdLabel.setVisible(false);
             roomIdLabel.setManaged(false);
             surrenderBtn.setText("HOME");
@@ -505,14 +525,14 @@ public class GameView {
         notifyNegativeBtn.setStyle("-fx-background-color: #EF4444; -fx-pref-width: 150;");
         notifyNegativeBtn.setVisible(true);
         notifyNegativeBtn.setManaged(true);
-        
+
         notifyPositiveBtn.setOnAction(e -> startBotMatch(1));
         notifyNegativeBtn.setOnAction(e -> startBotMatch(2));
-        
+
         notificationOverlay.setVisible(true);
         notificationOverlay.setManaged(true);
     }
-    
+
     private void startBotMatch(int level) {
         notificationOverlay.setVisible(false);
         notificationOverlay.setManaged(false);
@@ -530,22 +550,21 @@ public class GameView {
         notifyNegativeBtn.setStyle("-fx-background-color: #EF4444; -fx-pref-width: 100;");
         notifyNegativeBtn.setVisible(true);
         notifyNegativeBtn.setManaged(true);
-        
         notifyPositiveBtn.setOnAction(e -> {
             mainApp.clientConnection.send(new Message(Message.Action.REMATCH_ACCEPT));
             notificationOverlay.setVisible(false);
             notificationOverlay.setManaged(false);
         });
-        
+
         notifyNegativeBtn.setOnAction(e -> {
             mainApp.clientConnection.send(new Message(Message.Action.REMATCH_DECLINE));
             mainApp.returnToHome();
         });
-        
+
         notificationOverlay.setVisible(true);
         notificationOverlay.setManaged(true);
     }
-    
+
     public void showOpponentLeft(String leaver, String reason) {
         notificationTitle.setText("MATCH ENDED");
         if ("SERVER_DISCONNECT".equals(reason)) {
@@ -557,13 +576,13 @@ public class GameView {
         notifyPositiveBtn.setStyle("-fx-background-color: #3B82F6; -fx-pref-width: 150;");
         notifyNegativeBtn.setVisible(false);
         notifyNegativeBtn.setManaged(false);
-        
+
         notifyPositiveBtn.setOnAction(e -> mainApp.returnToHome());
-        
+
         notificationOverlay.setVisible(true);
         notificationOverlay.setManaged(true);
     }
-    
+
     public void showGenericNotification(String title, String content) {
         notificationTitle.setText(title);
         notificationContent.setText(content);
@@ -571,17 +590,24 @@ public class GameView {
         notifyPositiveBtn.setStyle("-fx-background-color: #3B82F6; -fx-pref-width: 120;");
         notifyNegativeBtn.setVisible(false);
         notifyNegativeBtn.setManaged(false);
-        
         notifyPositiveBtn.setOnAction(e -> {
             notificationOverlay.setVisible(false);
             notificationOverlay.setManaged(false);
         });
-        
+
         notificationOverlay.setVisible(true);
         notificationOverlay.setManaged(true);
     }
 
-    public void addChatMessage(String msg) { chatList.getItems().add(msg); }
-    public void clearChat() { chatList.getItems().clear(); }
-    public Parent getRoot() { return root; }
+    public void addChatMessage(String msg) {
+        chatList.getItems().add(msg);
+    }
+
+    public void clearChat() {
+        chatList.getItems().clear();
+    }
+
+    public Parent getRoot() {
+        return root;
+    }
 }

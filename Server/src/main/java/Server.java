@@ -81,10 +81,17 @@ public class Server {
                     Message data = (Message) in.readObject();
                     
                     if (data.action == Message.Action.LOGIN) {
-                        boolean success = gameManager.login(data.username, this);
+                        boolean success = gameManager.login(data.username, data.password, this);
                         if (!success) {
                             Message resp = new Message(Message.Action.LOGIN_FAIL);
-                            resp.content = "Username taken or invalid.";
+                            resp.content = "Invalid username or password / already logged in.";
+                            send(resp);
+                        }
+                    } else if (data.action == Message.Action.SIGNUP) {
+                        boolean success = gameManager.signup(data.username, data.password, this);
+                        if (!success) {
+                            Message resp = new Message(Message.Action.SIGNUP_FAIL);
+                            resp.content = "Username already exists.";
                             send(resp);
                         }
                     } else {
