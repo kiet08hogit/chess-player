@@ -9,6 +9,11 @@ public class Game {
     private boolean isGameOver;
     private String winner;
 
+    /**
+     * Constructs a new Checkers Game instance.
+     * @param player1 The username for Player 1 (Red).
+     * @param player2 The username for Player 2 (Black).
+     */
     public Game(String player1, String player2) {
         this.player1Name = player1;
         this.player2Name = player2;
@@ -16,6 +21,9 @@ public class Game {
         reset();
     }
 
+    /**
+     * Resets the game to its initial state, clearing the board and resetting turns.
+     */
     public void reset() {
         initializeBoard();
         this.p1Turn = true; 
@@ -23,6 +31,10 @@ public class Game {
         this.winner = null;
     }
 
+    /**
+     * Initializes the standard 8x8 checkerboard.
+     * Player 1 pieces (Red) are placed at the bottom, Player 2 pieces (Black) at the top.
+     */
     private void initializeBoard() {
         // 0 = empty, 1 = P1 (bottom), 2 = P2 (top), 3 = P1 King, 4 = P2 King
         for (int y = 0; y < 8; y++) {
@@ -38,6 +50,10 @@ public class Game {
         }
     }
 
+    /**
+     * Gets a copy of the current board state.
+     * @return A 2D array representing the board.
+     */
     public int[][] getBoard() {
         return board;
     }
@@ -57,7 +73,15 @@ public class Game {
     public String getPlayer1Name() { return player1Name; }
     public String getPlayer2Name() { return player2Name; }
 
-    // Returns null if valid, or an error reason if invalid
+    /**
+     * Attempts to move a piece on the board.
+     * @param isP1 True if Player 1 is making the move, false for Player 2.
+     * @param startX The starting X coordinate.
+     * @param startY The starting Y coordinate.
+     * @param endX The destination X coordinate.
+     * @param endY The destination Y coordinate.
+     * @return null if the move was successful, or a string describing the error if invalid.
+     */
     public synchronized String attemptMove(boolean isP1, int startX, int startY, int endX, int endY) {
         if (isGameOver) return "Game is over.";
         if (isP1 != p1Turn) return "Not your turn.";
@@ -130,11 +154,21 @@ public class Game {
         return null; // success
     }
 
+    /**
+     * Manually forcefully ends the game and declares a winner.
+     * @param winner The username of the winner.
+     */
     public void setGameOver(String winner) {
         this.isGameOver = true;
         this.winner = winner;
     }
 
+    /**
+     * Checks if a coordinate is within the 8x8 board boundaries.
+     * @param x The X coordinate.
+     * @param y The Y coordinate.
+     * @return True if valid, false otherwise.
+     */
     private boolean isValidBoardPos(int x, int y) {
         return x >= 0 && x < 8 && y >= 0 && y < 8;
     }
@@ -143,6 +177,12 @@ public class Game {
         return canJumpFromPosition(x, y);
     }
 
+    /**
+     * Checks if a specific piece can perform any jump over an opponent.
+     * @param x The piece's X coordinate.
+     * @param y The piece's Y coordinate.
+     * @return True if a jump is possible, false otherwise.
+     */
     private boolean canJumpFromPosition(int x, int y) {
         int piece = board[x][y];
         if (piece == 0) return false;
@@ -176,6 +216,10 @@ public class Game {
         return false;
     }
 
+    /**
+     * Checks the board state to see if a player has won the game.
+     * A win occurs if the opponent has no pieces left or no valid moves.
+     */
     private void checkWinCondition() {
         int p1Count = 0;
         int p2Count = 0;
@@ -229,6 +273,12 @@ public class Game {
         return canJumpFromPosition(x, y);
     }
 
+    /**
+     * Retrieves all valid moves for a specific player across the entire board.
+     * Format: [startX, startY, endX, endY, isJump]
+     * @param isP1 True to get Player 1's moves, false for Player 2.
+     * @return A list of valid move coordinate arrays.
+     */
     public List<int[]> getAllValidMoves(boolean isP1) {
         List<int[]> moves = new ArrayList<>();
         for (int x = 0; x < 8; x++) {
@@ -244,6 +294,12 @@ public class Game {
         return moves;
     }
 
+    /**
+     * Finds all valid moves for a specific piece on the board.
+     * @param x The piece's X coordinate.
+     * @param y The piece's Y coordinate.
+     * @return A list of arrays [startX, startY, endX, endY, isJump].
+     */
     private List<int[]> getValidMovesFrom(int x, int y) {
         List<int[]> moves = new ArrayList<>();
         int piece = board[x][y];

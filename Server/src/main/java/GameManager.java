@@ -13,10 +13,12 @@ public class GameManager {
     private Random random = new Random();
     private DatabaseManager db = new DatabaseManager();
 
+    // constructor
     public GameManager(Server server) {
         this.server = server;
     }
 
+    // generate room id for friends
     private String generateRoomId() {
         String id;
         do {
@@ -25,6 +27,7 @@ public class GameManager {
         return id;
     }
 
+    // login user 
     public synchronized boolean login(String username, String password, Server.ClientThread client) {
         if (onlineUsers.containsKey(username)) {
             return false;
@@ -48,6 +51,7 @@ public class GameManager {
         return true;
     }
 
+    // sign up user
     public synchronized boolean signup(String username, String password, Server.ClientThread client) {
         if (onlineUsers.containsKey(username)) {
             return false;
@@ -63,6 +67,7 @@ public class GameManager {
         return true;
     }
 
+    // disconnect user
     public synchronized void disconnect(Server.ClientThread client) {
         if (client.username != null) {
             onlineUsers.remove(client.username);
@@ -78,11 +83,11 @@ public class GameManager {
         }
     }
 
+    // broadcast online players
     private synchronized void broadcastOnlinePlayers() {
         Message msg = new Message(Message.Action.UPDATE_PLAYER_LIST);
         HashMap<String, String> statusMap = new HashMap<>();
         
-        // Copy keys to avoid ConcurrentModificationException if needed, 
         // though we are in a synchronized method.
         for (String uname : onlineUsers.keySet()) {
             Server.ClientThread c = onlineUsers.get(uname);
@@ -108,6 +113,7 @@ public class GameManager {
         }
     }
 
+    // find match
     public synchronized void findMatch(Server.ClientThread client) {
         client.status = "Waiting for opponent";
         server.log(client.username + " is waiting for an opponent");
@@ -126,10 +132,12 @@ public class GameManager {
         }
     }
 
+    // start match for two players
     private void startMatch(Server.ClientThread p1, Server.ClientThread p2) {
         startMatch(p1, p2, generateRoomId());
     }
 
+    // start match for two players with room id
     private void startMatch(Server.ClientThread p1, Server.ClientThread p2, String roomId) {
         GameSession session = new GameSession(p1, p2, new Game(p1.username, p2.username), roomId);
         
@@ -147,6 +155,7 @@ public class GameManager {
         broadcastOnlinePlayers();
     }
     
+    // send match start
     private void sendMatchStart(GameSession session) {
         Message m1 = new Message(Message.Action.MATCH_FOUND);
         m1.opponentName = session.p2.username;
@@ -171,6 +180,7 @@ public class GameManager {
         broadcastGameState(session);
     }
 
+    // connect a client to an active match as a spectator
     public synchronized void watchMatch(Server.ClientThread client, String roomId) {
         GameSession session = roomMap.get(roomId);
         if (session != null) {
@@ -207,6 +217,7 @@ public class GameManager {
         }
     }
 
+    // handle client requesting to leave a match and return to the main lobby
     public synchronized void playAgain(Server.ClientThread client) {
         if (client.gameSession != null) {
             GameSession session = client.gameSession;
@@ -241,6 +252,7 @@ public class GameManager {
         broadcastOnlinePlayers();
     }
 
+    // The central router for processing all in-game and lobby messages from clients
     public synchronized void processMessage(Server.ClientThread client, Message msg) {
         if (msg.action == Message.Action.FIND_MATCH) {
             findMatch(client);
@@ -418,6 +430,7 @@ public class GameManager {
         }
     }
 
+    // broadcast game state
     private void broadcastGameState(GameSession session) {
         Game game = session.game;
         Message update = new Message(Message.Action.GAME_STATE_UPDATE);
@@ -463,6 +476,7 @@ public class GameManager {
         }
     }
     
+    // handle when a player disconnects or leaves mid-match, awarding a forfeit win to the opponent
     private void handleForfeit(GameSession session, String leaver) {
         Message m = new Message(Message.Action.OPPONENT_LEFT);
         m.roomId = session.roomId;
@@ -496,6 +510,7 @@ public class GameManager {
         broadcastOnlinePlayers();
     }
 
+    // helper method to deep clone a game state message so it can be customized for individual players
     private Message cloneUpdate(Message m) {
         Message n = new Message(m.action);
         n.board = m.board;
@@ -508,6 +523,7 @@ public class GameManager {
         return n;
     }
 
+    // start solo training match against server bot
     private void playBot(Server.ClientThread client, int level) {
         client.status = "In a match";
         Game botGame = new Game(client.username, "BOT");
@@ -531,6 +547,8 @@ public class GameManager {
         broadcastOnlinePlayers();
     }
 
+    // Executes the bot's turn in a training match based on its difficulty level.
+    // Level 1: Random moves. Level 2: Prioritizes jump captures.
     private void makeBotMove(GameSession session) {
         synchronized(this) {
             if (session.game.isGameOver() || session.game.isP1Turn()) return;
@@ -567,6 +585,7 @@ public class GameManager {
         }
     }
 
+    // filters profanity from chat messages using asterisks
     private String filterProfanity(String input) {
         if (input == null) return null;
         String[] badWords = { 
