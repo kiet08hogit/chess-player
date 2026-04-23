@@ -45,10 +45,13 @@ public class GuiClient extends Application {
     int selectedY = -1;
     private Message lastMessage;
 
+    // main 
     public static void main(String[] args) {
         launch(args);
     }
+    
 
+    // start method 
     @Override
     public void start(Stage primaryStage) throws Exception {
         this.primaryStage = primaryStage;
@@ -81,6 +84,7 @@ public class GuiClient extends Application {
         primaryStage.show();
     }
     
+    // user login with username and password, then client sends login request to server
     public void onLoginAttempt(String user, String pass) {
         this.loggedInUser = user;
         Message m = new Message(Message.Action.LOGIN);
@@ -89,6 +93,7 @@ public class GuiClient extends Application {
         clientConnection.send(m);
     }
 
+    // user signup with username and password, then client sends signup request to server
     public void onSignupAttempt(String user, String pass) {
         Message m = new Message(Message.Action.SIGNUP);
         m.username = user;
@@ -96,17 +101,20 @@ public class GuiClient extends Application {
         clientConnection.send(m);
     }
     
+    // signup page 
     public void showSignupPage() {
         signupView.clearFields();
         primaryStage.setScene(signupScene);
         primaryStage.setTitle("Checkers - Sign Up");
     }
     
+    // login page
     public void showLoginPage() {
         primaryStage.setScene(loginScene);
         primaryStage.setTitle("Checkers Login");
     }
 
+    // find match button clicked in home view
     public void onFindMatch() {
         clientConnection.send(new Message(Message.Action.FIND_MATCH));
         waitingTitleLabel.setText("Searching for opponent...");
@@ -115,6 +123,7 @@ public class GuiClient extends Application {
         primaryStage.setTitle("Searching for Match...");
     }
 
+    // create room button clicked in home view
     public void onCreateRoom() {
         clientConnection.send(new Message(Message.Action.CREATE_ROOM));
         waitingTitleLabel.setText("Creating room...");
@@ -123,6 +132,7 @@ public class GuiClient extends Application {
         primaryStage.setTitle("Creating Room...");
     }
 
+    // join room button clicked in home view
     public void onJoinFriend(String roomId) {
         Message m = new Message(Message.Action.JOIN_ROOM);
         m.roomId = roomId;
@@ -131,18 +141,21 @@ public class GuiClient extends Application {
         primaryStage.setTitle("Joining Room #" + roomId + "...");
     }
 
+    // watch match button clicked in home view
     public void onWatchMatch(String roomId) {
         Message m = new Message(Message.Action.WATCH_MATCH);
         m.roomId = roomId;
         clientConnection.send(m);
     }
 
+    // play bot button clicked in home view
     public void onPlayBotClicked() {
         primaryStage.setScene(gameScene);
         gameView.resetUI();
         gameView.showBotLevelSelection();
     }
 
+    // handles server messages
     private void handleServerMessage(Message data) {
         if (data.action == Message.Action.LOGIN_SUCCESS) {
             homeView.setUserLabel(loggedInUser);
@@ -216,16 +229,19 @@ public class GuiClient extends Application {
         else if (data.action == Message.Action.ERROR) {
             if (primaryStage.getScene() == gameScene) {
                 gameView.showGenericNotification("NOTIFICATION", data.content);
-            } else {
+            } 
+            else {
                 new Alert(AlertType.WARNING, data.content).show();
             }
             
+            // if match ended or room not found, return to home screen
             if (data.content.contains("Match ended") || data.content.contains("Room not found")) {
                 primaryStage.setScene(homeScene);
             }
         }
     }
 
+    // re-renders game view
     public void refreshView() {
         if (lastMessage != null) {
             this.isP1 = isSpectatorMode ? spectatorViewP1 : isP1;
@@ -233,6 +249,8 @@ public class GuiClient extends Application {
         }
     }
     
+   
+    // handles tile click, selects piece, or sends move request
     public void handleTileClick(int x, int y, int piece) {
         boolean ownPiece = false;
         if (isP1 && (piece == 1 || piece == 3)) ownPiece = true;
@@ -266,11 +284,13 @@ public class GuiClient extends Application {
         }
     }
     
+    // called when play again button is clicked
     public void returnToHome() {
         clientConnection.send(new Message(Message.Action.PLAY_AGAIN));
         primaryStage.setScene(homeScene);
     }
 
+    // waiting screen
     private Scene createWaitingGui() {
         VBox root = new VBox(30);
         root.setAlignment(Pos.CENTER);
@@ -278,8 +298,9 @@ public class GuiClient extends Application {
         try { root.getStylesheets().add(getClass().getResource("/style.css").toExternalForm()); } catch (Exception e) {}
         waitingTitleLabel = new Label("Searching for opponent...");
         waitingTitleLabel.getStyleClass().add("searching-label");
-        waitingTitleLabel.setStyle("-fx-text-fill: white;"); // Ensure it's white
+        waitingTitleLabel.setStyle("-fx-text-fill: white;"); 
         
+        // pulsing animation
         Circle pulse = new Circle(30, Color.web("#DC2626"));
         FadeTransition ft = new FadeTransition(Duration.seconds(1), pulse);
         ft.setFromValue(1.0);
@@ -288,9 +309,11 @@ public class GuiClient extends Application {
         ft.setAutoReverse(true);
         ft.play();
         
+        // subtitle text
         waitingSubLabel = new Label("Please wait while we connect you to a game...");
         waitingSubLabel.setStyle("-fx-text-fill: #9CA3AF; -fx-font-size: 14px;");
         
+        // back home button
         Button backHomeBtn = new Button("BACK HOME");
         backHomeBtn.getStyleClass().add("menu-button");
         backHomeBtn.setMinWidth(200);
