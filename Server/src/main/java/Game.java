@@ -9,11 +9,7 @@ public class Game {
     private boolean isGameOver;
     private String winner;
 
-    /**
-     * Constructs a new Checkers Game instance.
-     * @param player1 The username for Player 1 (Red).
-     * @param player2 The username for Player 2 (Black).
-     */
+    // constructor
     public Game(String player1, String player2) {
         this.player1Name = player1;
         this.player2Name = player2;
@@ -21,28 +17,30 @@ public class Game {
         reset();
     }
 
-    /**
-     * Resets the game to its initial state, clearing the board and resetting turns.
-     */
+    // reset function
+    // Input: none
+    // Output: void
     public void reset() {
         initializeBoard();
-        this.p1Turn = true; 
+        this.p1Turn = true;
         this.isGameOver = false;
         this.winner = null;
     }
 
-    /**
-     * Initializes the standard 8x8 checkerboard.
-     * Player 1 pieces (Red) are placed at the bottom, Player 2 pieces (Black) at the top.
-     */
+    // initializeBoard function
+    // Input: none
+    // Output: void
     private void initializeBoard() {
         // 0 = empty, 1 = P1 (bottom), 2 = P2 (top), 3 = P1 King, 4 = P2 King
-        for (int y = 0; y < 8; y++) {
-            for (int x = 0; x < 8; x++) {
+        for (int y = 0; y < 8; ++y) {
+            for (int x = 0; x < 8; ++x) {
                 if ((x + y) % 2 != 0) {
-                    if (y < 3) board[x][y] = 2; // P2 starts top
-                    else if (y > 4) board[x][y] = 1; // P1 starts bottom
-                    else board[x][y] = 0;
+                    if (y < 3)
+                        board[x][y] = 2; // P2 starts top
+                    else if (y > 4)
+                        board[x][y] = 1; // P1 starts bottom
+                    else
+                        board[x][y] = 0;
                 } else {
                     board[x][y] = 0;
                 }
@@ -50,10 +48,9 @@ public class Game {
         }
     }
 
-    /**
-     * Gets a copy of the current board state.
-     * @return A 2D array representing the board.
-     */
+    // getBoard function
+    // Input: none
+    // Output: 2D array representing the board
     public int[][] getBoard() {
         return board;
     }
@@ -69,33 +66,39 @@ public class Game {
     public String getWinner() {
         return winner;
     }
-    
-    public String getPlayer1Name() { return player1Name; }
-    public String getPlayer2Name() { return player2Name; }
 
-    /**
-     * Attempts to move a piece on the board.
-     * @param isP1 True if Player 1 is making the move, false for Player 2.
-     * @param startX The starting X coordinate.
-     * @param startY The starting Y coordinate.
-     * @param endX The destination X coordinate.
-     * @param endY The destination Y coordinate.
-     * @return null if the move was successful, or a string describing the error if invalid.
-     */
+    public String getPlayer1Name() {
+        return player1Name;
+    }
+
+    public String getPlayer2Name() {
+        return player2Name;
+    }
+
+    // attemptMove function
+    // Input: isP1, startX, startY, endX, endY
+    // Output: null if the move was successful, or a string describing the error if
+    // invalid
     public synchronized String attemptMove(boolean isP1, int startX, int startY, int endX, int endY) {
-        if (isGameOver) return "Game is over.";
-        if (isP1 != p1Turn) return "Not your turn.";
+        if (isGameOver)
+            return "Game is over.";
+        if (isP1 != p1Turn)
+            return "Not your turn.";
 
-        if (!isValidBoardPos(startX, startY) || !isValidBoardPos(endX, endY)) {
+        if (!isValidBoardPos(startX, startY) || !isValidBoardPos(endX, endY))
             return "Out of bounds.";
-        }
 
         int piece = board[startX][startY];
-        if (piece == 0) return "No piece at start position.";
-        if (isP1 && (piece == 2 || piece == 4)) return "Not your piece.";
-        if (!isP1 && (piece == 1 || piece == 3)) return "Not your piece.";
-        if (board[endX][endY] != 0) return "End position is not empty.";
-        if ((endX + endY) % 2 == 0) return "Invalid square color.";
+        if (piece == 0)
+            return "No piece at start position.";
+        if (isP1 && (piece == 2 || piece == 4))
+            return "Not your piece.";
+        if (!isP1 && (piece == 1 || piece == 3))
+            return "Not your piece.";
+        if (board[endX][endY] != 0)
+            return "End position is not empty.";
+        if ((endX + endY) % 2 == 0)
+            return "Invalid square color.";
 
         boolean isKing = (piece == 3 || piece == 4);
         int dx = endX - startX;
@@ -103,8 +106,10 @@ public class Game {
 
         // Check direction
         if (!isKing) {
-            if (isP1 && dy >= 0) return "Must move forward (up).";
-            if (!isP1 && dy <= 0) return "Must move forward (down).";
+            if (isP1 && dy >= 0)
+                return "Must move forward (up).";
+            if (!isP1 && dy <= 0)
+                return "Must move forward (down).";
         }
 
         boolean isJump = Math.abs(dx) == 2 && Math.abs(dy) == 2;
@@ -116,12 +121,15 @@ public class Game {
             int midX = startX + dx / 2;
             int midY = startY + dy / 2;
             int midPiece = board[midX][midY];
-            if (midPiece == 0) return "Invalid jump.";
-            if (isP1 && (midPiece == 1 || midPiece == 3)) return "Cannot jump own piece.";
-            if (!isP1 && (midPiece == 2 || midPiece == 4)) return "Cannot jump own piece.";
-            
+            if (midPiece == 0)
+                return "Invalid jump.";
+            if (isP1 && (midPiece == 1 || midPiece == 3))
+                return "Cannot jump own piece.";
+            if (!isP1 && (midPiece == 2 || midPiece == 4))
+                return "Cannot jump own piece.";
+
             // Perform jump
-            board[midX][midY] = 0; 
+            board[midX][midY] = 0;
         } else {
             return "Invalid move length.";
         }
@@ -149,25 +157,25 @@ public class Game {
         if (!doubleJumpAvail) {
             p1Turn = !p1Turn; // Change turn
         }
-        
+
         checkWinCondition();
         return null; // success
     }
 
-    /**
-     * Manually forcefully ends the game and declares a winner.
-     * @param winner The username of the winner.
+    /*
+     * setGameOver function
+     * input: winner
+     * output: void
      */
     public void setGameOver(String winner) {
         this.isGameOver = true;
         this.winner = winner;
     }
 
-    /**
-     * Checks if a coordinate is within the 8x8 board boundaries.
-     * @param x The X coordinate.
-     * @param y The Y coordinate.
-     * @return True if valid, false otherwise.
+    /*
+     * isValidBoardPos function
+     * input: x, y
+     * output: bool
      */
     private boolean isValidBoardPos(int x, int y) {
         return x >= 0 && x < 8 && y >= 0 && y < 8;
@@ -177,25 +185,25 @@ public class Game {
         return canJumpFromPosition(x, y);
     }
 
-    /**
-     * Checks if a specific piece can perform any jump over an opponent.
-     * @param x The piece's X coordinate.
-     * @param y The piece's Y coordinate.
-     * @return True if a jump is possible, false otherwise.
+    /*
+     * canJumpFromPosition function
+     * input: x, y
+     * output: bool
      */
     private boolean canJumpFromPosition(int x, int y) {
         int piece = board[x][y];
-        if (piece == 0) return false;
+        if (piece == 0)
+            return false;
         boolean isP1 = (piece == 1 || piece == 3);
         boolean isKing = (piece == 3 || piece == 4);
 
         int[][] dirs;
         if (isKing) {
-            dirs = new int[][]{{-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
+            dirs = new int[][] { { -1, -1 }, { -1, 1 }, { 1, -1 }, { 1, 1 } };
         } else if (isP1) {
-            dirs = new int[][]{{-1, -1}, {1, -1}};
+            dirs = new int[][] { { -1, -1 }, { 1, -1 } };
         } else {
-            dirs = new int[][]{{-1, 1}, {1, 1}};
+            dirs = new int[][] { { -1, 1 }, { 1, 1 } };
         }
 
         for (int[] dir : dirs) {
@@ -208,33 +216,42 @@ public class Game {
                 int midP = board[midX][midY];
                 int destP = board[destX][destY];
                 if (destP == 0 && midP != 0) {
-                    boolean midIsOpponent = isP1 ? (midP == 2 || midP == 4) : (midP == 1 || midP == 3);
-                    if (midIsOpponent) return true;
+                    boolean midIsOpponent = false;
+                    if (isP1) {
+                        if (midP == 2 || midP == 4)
+                            midIsOpponent = true;
+                    } else {
+                        if (midP == 1 || midP == 3)
+                            midIsOpponent = true;
+                    }
+                    if (midIsOpponent)
+                        return true;
                 }
             }
         }
         return false;
     }
 
-    /**
-     * Checks the board state to see if a player has won the game.
-     * A win occurs if the opponent has no pieces left or no valid moves.
-     */
+    // checkWinCondition function
+    // Input: none
+    // Output: void
     private void checkWinCondition() {
         int p1Count = 0;
         int p2Count = 0;
         boolean p1CanMove = false;
         boolean p2CanMove = false;
 
-        for (int x = 0; x < 8; x++) {
-            for (int y = 0; y < 8; y++) {
+        for (int x = 0; x < 8; ++x) {
+            for (int y = 0; y < 8; ++y) {
                 int p = board[x][y];
                 if (p == 1 || p == 3) {
                     p1Count++;
-                    if (!p1CanMove && hasValidMove(x, y)) p1CanMove = true;
+                    if (!p1CanMove && hasValidMove(x, y))
+                        p1CanMove = true;
                 } else if (p == 2 || p == 4) {
                     p2Count++;
-                    if (!p2CanMove && hasValidMove(x, y)) p2CanMove = true;
+                    if (!p2CanMove && hasValidMove(x, y))
+                        p2CanMove = true;
                 }
             }
         }
@@ -258,26 +275,26 @@ public class Game {
 
         int[][] dirs;
         if (isKing) {
-            dirs = new int[][]{{-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
+            dirs = new int[][] { { -1, -1 }, { -1, 1 }, { 1, -1 }, { 1, 1 } };
         } else if (isP1) {
-            dirs = new int[][]{{-1, -1}, {1, -1}};
+            dirs = new int[][] { { -1, -1 }, { 1, -1 } };
         } else {
-            dirs = new int[][]{{-1, 1}, {1, 1}};
+            dirs = new int[][] { { -1, 1 }, { 1, 1 } };
         }
 
         for (int[] dir : dirs) {
             int destX = x + dir[0];
             int destY = y + dir[1];
-            if (isValidBoardPos(destX, destY) && board[destX][destY] == 0) return true;
+            if (isValidBoardPos(destX, destY) && board[destX][destY] == 0)
+                return true;
         }
         return canJumpFromPosition(x, y);
     }
 
-    /**
-     * Retrieves all valid moves for a specific player across the entire board.
-     * Format: [startX, startY, endX, endY, isJump]
-     * @param isP1 True to get Player 1's moves, false for Player 2.
-     * @return A list of valid move coordinate arrays.
+    /*
+     * getAllValidMoves function
+     * Input: isP1
+     * Output: [startX,startY,endX,endY,isJump]
      */
     public List<int[]> getAllValidMoves(boolean isP1) {
         List<int[]> moves = new ArrayList<>();
@@ -294,11 +311,10 @@ public class Game {
         return moves;
     }
 
-    /**
-     * Finds all valid moves for a specific piece on the board.
-     * @param x The piece's X coordinate.
-     * @param y The piece's Y coordinate.
-     * @return A list of arrays [startX, startY, endX, endY, isJump].
+    /*
+     * getValidMovesFrom function
+     * Input: x, y
+     * Output:[startX,startY,endX,endY,isJump]
      */
     private List<int[]> getValidMovesFrom(int x, int y) {
         List<int[]> moves = new ArrayList<>();
@@ -308,11 +324,11 @@ public class Game {
 
         int[][] dirs;
         if (isKing) {
-            dirs = new int[][]{{-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
+            dirs = new int[][] { { -1, -1 }, { -1, 1 }, { 1, -1 }, { 1, 1 } };
         } else if (isP1) {
-            dirs = new int[][]{{-1, -1}, {1, -1}};
+            dirs = new int[][] { { -1, -1 }, { 1, -1 } };
         } else {
-            dirs = new int[][]{{-1, 1}, {1, 1}};
+            dirs = new int[][] { { -1, 1 }, { 1, 1 } };
         }
 
         // Check jumps
@@ -325,7 +341,8 @@ public class Game {
                 int midP = board[midX][midY];
                 if (midP != 0 && board[destX][destY] == 0) {
                     boolean midIsOpponent = isP1 ? (midP == 2 || midP == 4) : (midP == 1 || midP == 3);
-                    if (midIsOpponent) moves.add(new int[]{x, y, destX, destY, 1}); // 1 = jump
+                    if (midIsOpponent)
+                        moves.add(new int[] { x, y, destX, destY, 1 }); // 1 - jump
                 }
             }
         }
@@ -335,7 +352,7 @@ public class Game {
             int destX = x + dir[0];
             int destY = y + dir[1];
             if (isValidBoardPos(destX, destY) && board[destX][destY] == 0) {
-                moves.add(new int[]{x, y, destX, destY, 0}); // 0 = simple
+                moves.add(new int[] { x, y, destX, destY, 0 }); // 0 - simple
             }
         }
         return moves;
