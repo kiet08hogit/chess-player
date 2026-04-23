@@ -79,7 +79,7 @@ public class Server {
             while (true) {
                 try {
                     Message data = (Message) in.readObject();
-                    
+
                     if (data.action == Message.Action.LOGIN) {
                         boolean success = gameManager.login(data.username, data.password, this);
                         if (!success) {
