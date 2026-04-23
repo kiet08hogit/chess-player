@@ -485,7 +485,6 @@ public class GameView {
         notificationOverlay.setVisible(false);
         notificationOverlay.setManaged(false);
         currentOpponent = "----";
-        setBotMatchMode(false, 0); // Restore default
     }
 
     public void setBotMatchMode(boolean isBot, int level) {
