@@ -14,9 +14,17 @@ public class DatabaseManager {
                     + "	username TEXT PRIMARY KEY,\n"
                     + "	password TEXT NOT NULL,\n"
                     + "	wins INTEGER DEFAULT 0,\n"
-                    + "	losses INTEGER DEFAULT 0\n"
+                    + "	losses INTEGER DEFAULT 0,\n"
+                    + "	elo INTEGER DEFAULT 3600\n"
                     + ");";
             stmt.execute(sql);
+            
+            // Migration: Add elo column if it doesn't exist
+            try {
+                stmt.execute("ALTER TABLE players ADD COLUMN elo INTEGER DEFAULT 3600;");
+            } catch (Exception e) {
+                // Column likely already exists
+            }
         } catch (Exception e) {
             System.err.println("DB Initialization Error: " + e.getMessage());
         }
@@ -87,5 +95,32 @@ public class DatabaseManager {
             System.err.println("Stats Error: " + e.getMessage());
         }
         return new int[]{0, 0};
+    }
+    public int getElo(String username) {
+        String sql = "SELECT elo FROM players WHERE username = ?";
+        try (Connection conn = DriverManager.getConnection(URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("elo");
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Elo Fetch Error: " + e.getMessage());
+        }
+        return 3600;
+    }
+
+    public void updateElo(String username, int newElo) {
+        String sql = "UPDATE players SET elo = ? WHERE username = ?";
+        try (Connection conn = DriverManager.getConnection(URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, newElo);
+            pstmt.setString(2, username);
+            pstmt.executeUpdate();
+        } catch (Exception e) {
+            System.err.println("Elo Update Error: " + e.getMessage());
+        }
     }
 }
