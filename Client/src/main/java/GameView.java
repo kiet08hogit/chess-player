@@ -66,6 +66,7 @@ public class GameView {
         mainContent.setAlignment(Pos.CENTER);
         mainContent.setPadding(new Insets(10));
 
+        // board
         StackPane boardStack = new StackPane();
         boardPane = new GridPane();
         boardPane.setHgap(0);
@@ -94,6 +95,7 @@ public class GameView {
             boardPane.getRowConstraints().add(rc);
         }
 
+        // game overlay
         gameOverOverlay = new Label("YOU LOSE");
         gameOverOverlay.setStyle(
                 "-fx-font-size: 60px; -fx-font-weight: bold; -fx-background-color: rgba(0,0,0,0.5); -fx-padding: 20;");
@@ -127,6 +129,7 @@ public class GameView {
 
         boardStack.getChildren().addAll(boardPane, gameOverOverlay, notificationOverlay);
 
+        // rules sidebar
         VBox rulesSidebar = new VBox(20);
         rulesSidebar.setPadding(new Insets(20));
         rulesSidebar.setPrefWidth(280);
@@ -147,6 +150,7 @@ public class GameView {
         rulesText.setStyle("-fx-text-fill: #9CA3AF; -fx-font-size: 14px; -fx-line-spacing: 4px;");
         rulesSidebar.getChildren().addAll(rulesTitle, rulesText);
 
+        // score column
         scoreCol = new VBox(150);
         scoreCol.setAlignment(Pos.CENTER);
         opponentScoreLabel = new Label("0");
@@ -165,6 +169,7 @@ public class GameView {
         mainContent.getChildren().addAll(boardStack, scoreCol);
         root.setCenter(mainContent);
 
+        // Right side
         VBox rightBox = new VBox(15);
         rightBox.setPadding(new Insets(10));
         rightBox.setPrefWidth(320);
@@ -206,6 +211,7 @@ public class GameView {
             }
         });
 
+        // right side for spectator
         spectatorHomeBtn = new Button("HOME");
         spectatorHomeBtn.getStyleClass().add("menu-button");
         spectatorHomeBtn.setMinWidth(265);
@@ -267,6 +273,7 @@ public class GameView {
         root.setRight(rightBox);
     }
 
+    // new game state
     public void updateState(Message data) {
         gameOverOverlay.setVisible(false);
         chatInputBox.setVisible(true);
@@ -330,7 +337,12 @@ public class GameView {
         List<int[]> moves = new ArrayList<>();
         boolean isKing = (piece == 3 || piece == 4);
         boolean isP1Piece = (piece == 1 || piece == 3);
-        int dyForward = isP1Piece ? -1 : 1;
+        int dyForward;
+        if (isP1Piece) {
+            dyForward = -1;
+        } else {
+            dyForward = 1;
+        }
 
         int[] dirs = isKing ? new int[] { -1, 1 } : new int[] { dyForward };
 
@@ -344,8 +356,8 @@ public class GameView {
                 }
 
                 // Jump move
-                int jx = x + 2 * dx;
-                int jy = y + 2 * dy;
+                int jx = x + (2 * dx);
+                int jy = y + (2 * dy);
                 if (jx >= 0 && jx < 8 && jy >= 0 && jy < 8 && lastBoard[jx][jy] == 0) {
                     if (nx >= 0 && nx < 8 && ny >= 0 && ny < 8) {
                         int midPiece = lastBoard[nx][ny];
@@ -405,7 +417,6 @@ public class GameView {
             cell.setStyle(cell.getStyle() + "-fx-background-color: #4ADE80; -fx-opacity: 0.8;"); // Green highlight
         } else if (isPath) {
             cell.setStyle(cell.getStyle() + "-fx-background-color: #BBF7D0; -fx-opacity: 0.6;"); // Light Green
-                                                                                                 // highlight
         }
 
         if (piece != 0) {
@@ -415,12 +426,12 @@ public class GameView {
             c.setStrokeWidth(3);
 
             if (piece == 1 || piece == 3) {
-                c.setFill(Color.web("#EF4444")); // Red piece
-                c.setStroke(Color.web("#B91C1C")); // Darker red border
+                c.setFill(Color.web("#EF4444")); // piece
+                c.setStroke(Color.web("#B91C1C")); // border
             }
             if (piece == 2 || piece == 4) {
-                c.setFill(Color.web("#1E293B")); // Dark piece
-                c.setStroke(Color.web("#0F172A")); // Darker border
+                c.setFill(Color.web("#1E293B")); // piece
+                c.setStroke(Color.web("#0F172A")); // border
             }
 
             // Inner circle for sleek look
@@ -566,8 +577,8 @@ public class GameView {
 
     public void showOpponentLeft(String leaver, String reason) {
         notificationTitle.setText("MATCH ENDED");
-        if ("SERVER_DISCONNECT".equals(reason)) {
-            notificationContent.setText(leaver + " has left the server.\nYou win by forfeit!");
+        if (reason.equals("SERVER_DISCONNECT")) {
+            notificationContent.setText(leaver + " has left the server.\nYou win");
         } else {
             notificationContent.setText(leaver + " has left the match.");
         }
