@@ -101,8 +101,8 @@ public class GameManager {
                 }
             }
             
-            int[] stats = db.getStats(uname);
-            displayStatus += " [W:" + stats[0] + " L:" + stats[1] + "]";
+            int elo = db.getElo(uname);
+            displayStatus += " [elo: " + elo + "]";
             
             statusMap.put(uname, displayStatus);
         }
@@ -324,10 +324,7 @@ public class GameManager {
                     session.p2Score++;
                 }
                 
-                if (!session.isBotMatch) {
-                    db.addWin(winner);
-                    db.addLoss(client.username);
-                }
+                updateMatchElo(winner, client.username, session.isBotMatch);
                 
                 server.log(client.username + " surrendered, " + winner + " won. Room ID: #" + session.roomId + " [Score: " + session.p1Score + "-" + session.p2Score + "]");
                 
@@ -341,6 +338,22 @@ public class GameManager {
                 if (opponent != null) {
                     opponent.send(new Message(Message.Action.REMATCH_REQUEST));
                     server.log(client.username + " requested a rematch against " + opponent.username);
+                } else if (session.isBotMatch) {
+                    server.log(client.username + " requested a rematch against bot");
+                    session.game = new Game(client.username, "BOT");
+                    
+                    Message m = new Message(Message.Action.MATCH_FOUND);
+                    m.roomId = "TRAINING";
+                    m.opponentName = "BOT (Lv" + session.botLevel + ")";
+                    m.isPlayer1 = true;
+                    m.isBotMatch = true;
+                    m.botLevel = session.botLevel;
+                    m.board = session.game.getBoard();
+                    m.p1Score = session.p1Score;
+                    m.p2Score = session.p2Score;
+                    client.send(m);
+                    
+                    broadcastGameState(session);
                 }
             }
         } else if (msg.action == Message.Action.REMATCH_ACCEPT) {
@@ -398,10 +411,7 @@ public class GameManager {
                         loser = session.p1.username;
                     }
                     
-                    if (!session.isBotMatch) {
-                        db.addWin(winner);
-                        db.addLoss(loser);
-                    }
+                    updateMatchElo(winner, loser, session.isBotMatch);
                     
                     server.log(winner + " won against " + loser + ". Room ID: #" + session.roomId + " [Score: " + session.p1Score + "-" + session.p2Score + "]");
                 }
@@ -459,6 +469,10 @@ public class GameManager {
             ms.gameStatus = "Spectating: " + session.p1.username + " vs " + session.p2.username;
             if (game.isGameOver()) ms.gameStatus = "Winner: " + game.getWinner();
             s.send(ms);
+        }
+
+        if (game.isGameOver()) {
+            broadcastOnlinePlayers();
         }
     }
     
@@ -613,5 +627,36 @@ public class GameManager {
             if (c == p2) return p1;
             return null;
         }
+    }
+
+    private synchronized void updateMatchElo(String winner, String loser, boolean isBotMatch) {
+        // Record legacy wins/losses first
+        db.addWin(winner);
+        db.addLoss(loser);
+
+        if (isBotMatch || "BOT".equals(winner) || "BOT".equals(loser)) {
+            return; // No elo for bot matches
+        }
+
+        int winnerElo = db.getElo(winner);
+        int loserElo = db.getElo(loser);
+
+        int winnerChange = 100;
+        int loserChange = 100;
+
+        if (winnerElo - loserElo > 600) {
+            // Winner was Favorite (+80), Loser was Underdog (-80)
+            winnerChange = 80;
+            loserChange = 80;
+        } else if (loserElo - winnerElo > 600) {
+            // Winner was Underdog (+120), Loser was Favorite (-120)
+            winnerChange = 120;
+            loserChange = 120;
+        }
+
+        db.updateElo(winner, winnerElo + winnerChange);
+        db.updateElo(loser, loserElo - loserChange);
+        
+        server.log("Elo Updated: " + winner + " (+" + winnerChange + "), " + loser + " (-" + loserChange + ")");
     }
 }
